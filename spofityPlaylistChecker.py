@@ -24,6 +24,15 @@ else:
 #           track{19}:
 #               album{13}:
 #               artists [number_of_artists] :
+#                   0 {6}:
+#                       external_urls {1}:
+#                       href:
+#                       id:
+#                       name:
+#                       type:
+#                       uri:
+#                   1 {6}:
+#                       ...
 #               available_markets [n_of_avail_markets] :
 #               disc_number : 1
 #               duration_ms : 140026
@@ -64,14 +73,11 @@ with open("ModusMio_content_raw(26.11.2020).txt", "r") as oldTrackFile:
     # if there is another line throw an error
     if oldTrackFile.readline() != "":
         print("error: not a json format (file has more than one single line)")
-        # TODO: throw error
+        # TODO: throw error or stop further execution of this script
 
     oldResults = json.loads(data)
     oldTracks = oldResults["items"]
 
-
-latestTracksNames = []
-oldTracksNames = []
 
 # both are a list of dictionaries each containing the song's name and its artists names
 newSongs = []
@@ -109,10 +115,25 @@ for oldTrack in oldTracks:
 
 print("-------------------------- New Songs: --------------------------")
 for song in newSongs:
-    print(song["name"])
+    artists = ""
+    n_of_Artists = len(song["artists"])
+
+    for i in range(0,n_of_Artists-1):
+        artists += song["artists"][i]["name"] + ", "
+    artists += song["artists"][n_of_Artists-1]["name"]
+
+    print(song["name"] + " - " + artists)
 
 print("------------------------ Removed Songs: ------------------------")
 for song in removedSongs:
-    print(song["name"])
+
+    artists = ""
+    n_of_Artists = len(song["artists"])
+
+    for i in range(0,n_of_Artists-1):
+        artists += song["artists"][i]["name"] + ", "
+    artists += song["artists"][n_of_Artists-1]["name"]
+
+    print(song["name"] + " - " + artists)
 
 # pprint(results)
