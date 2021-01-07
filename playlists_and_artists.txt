@@ -16,8 +16,12 @@
 
 
 ## Playlists
-ModusMio = spotify:playlist:37i9dQZF1DX36edUJpD76c
-=spotify:playlist:37i9dQZF1DX36edUJpD76c
+
+ModusMio=spotify:playlist:37i9dQZF1DX36edUJpD76c
+
+RapCaviar=spotify:playlist:37i9dQZF1DX0XUsuxWHRQd
+
+
 
 37i9dQZF1DX36edUJpD76c
 
