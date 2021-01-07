@@ -1,0 +1,27 @@
+# add playlist and artist URIs here (format: <name> = <URI> )
+
+# everything from "#" to the end of the line WON'T be read by the script, use it to add comments if you want
+
+# HOW TO GET A URI:
+# In order to get a playlist's or artists URI simply the three dots next to playlist / artist, go to "share" and click
+# "copy Spotify URI".
+#
+# To add a playlist or artist to this list simply paste it somewhere in this file in this format: <name> = <URI>
+# where <name> is the name of playlist / artist (or a custom name you chose) and <URI> is the corresponding Spotify URI
+# ONLY ONE pair of <name> = <URI> will be read per line
+# 
+# It doesn't matter where you paste this, but I do recommend to paste playlists under ##Playlists and aristst under ##Artists. This
+# way the file is easy to read and understand.
+
+
+
+## Playlists
+ModusMio = spotify:playlist:37i9dQZF1DX36edUJpD76c
+=spotify:playlist:37i9dQZF1DX36edUJpD76c
+
+37i9dQZF1DX36edUJpD76c
+
+
+
+## Artists
+=spotify:artist:1qQLhymHXFPtP5U8KNKsm6
