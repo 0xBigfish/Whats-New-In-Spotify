@@ -54,8 +54,3 @@ def read_playlists_and_artists_from_file():
             p_and_a_list.append(tup)
 
     return p_and_a_list
-
-
-if __name__ == "__main__":
-    print(read_playlists_and_artists_from_file())
-    print(type(read_playlists_and_artists_from_file()))
