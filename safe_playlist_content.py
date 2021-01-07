@@ -6,6 +6,7 @@ def safe_playlist_to_hard_drive(sp, playlist_id):
     """
     :param sp: the connection to spotify ( like sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())
      for example )
+    :param playlist_id: the spotify id of the playlist
     :type sp: Spotify
     :type playlist_id: str
     """
