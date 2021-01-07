@@ -2,6 +2,11 @@ import json
 import re
 from datetime import date
 
+# check valid line with a regular expression
+name_re = ".*"  # ".*" is any number (including zero) of any characters (including whitespaces)
+uri_artist_re = "spotify:artist:\S*"  # \S matches any non-whitespace character
+uri_playlist_re = "spotify:playlist:\S*"
+
 
 def safe_playlist_to_hard_drive(sp, playlist_id):
     """
@@ -25,20 +30,77 @@ def safe_playlist_to_hard_drive(sp, playlist_id):
 def read_playlists_and_artists_from_file():
     """
     Reads playlists and artists URIs from file and return them as a list of tuples: (<name>, <URI>)
+
+    :return: a list of (name, URI) tuples
     """
 
     p_and_a_list = []
-
-    # check valid line with a regular expression
-    name_re = ".*"  # ".*" is any number (including zero) of any characters (including whitespaces)
-    uri_artist_re = "spotify:artist:\S*"  # \S matches any non-whitespace character
-    uri_playlist_re = "spotify:playlist:\S*"
 
     # noinspection RegExpDuplicateAlternationBranch
     # a warning is thrown but this is the correct pattern !!
     # "\s*" = any number of any whitespace character
     regex = re.compile(name_re + "=\s*" + uri_playlist_re + "|" +
                        name_re + "=\s*" + uri_artist_re, re.IGNORECASE)
+
+    with open("playlists_and_artists.txt", "r") as file:
+        lines = file.readlines()
+
+    # entries must be of format: "<name> = <URI>", extract them using the regular expression
+    for line in lines:
+        match = regex.match(line)
+
+        # if a part of the line matches the regex
+        if match:
+            name_and_uri = match.group()  # get the matched string
+            tup = (name_and_uri.partition("=")[0], name_and_uri.partition("=")[2])  # split it at the "="
+            p_and_a_list.append(tup)
+
+    return p_and_a_list
+
+
+def read_playlists_from_file():
+    """
+    Reads playlists URIs from file and return them as a list of tuples: (<name>, <URI>)
+
+    :return: a list of (name, URI) tuples
+    """
+
+    p_and_a_list = []
+
+    # noinspection RegExpDuplicateAlternationBranch
+    # a warning is thrown but this is the correct pattern !!
+    # "\s*" = any number of any whitespace character
+    regex = re.compile(name_re + "=\s*" + uri_playlist_re, re.IGNORECASE)
+
+    with open("playlists_and_artists.txt", "r") as file:
+        lines = file.readlines()
+
+    # entries must be of format: "<name> = <URI>", extract them using the regular expression
+    for line in lines:
+        match = regex.match(line)
+
+        # if a part of the line matches the regex
+        if match:
+            name_and_uri = match.group()  # get the matched string
+            tup = (name_and_uri.partition("=")[0], name_and_uri.partition("=")[2])  # split it at the "="
+            p_and_a_list.append(tup)
+
+    return p_and_a_list
+
+
+def read_artists_from_file():
+    """
+    Reads artists URIs from file and return them as a list of tuples: (<name>, <URI>)
+
+    :return: a list of (name, URI) tuples
+    """
+
+    p_and_a_list = []
+
+    # noinspection RegExpDuplicateAlternationBranch
+    # a warning is thrown but this is the correct pattern !!
+    # "\s*" = any number of any whitespace character
+    regex = re.compile(name_re + "=\s*" + uri_artist_re, re.IGNORECASE)
 
     with open("playlists_and_artists.txt", "r") as file:
         lines = file.readlines()
