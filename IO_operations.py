@@ -3,7 +3,8 @@ import re
 from datetime import date
 
 # check valid line with a regular expression
-name_re = ".*"  # ".*" is any number (including zero) of any characters (including whitespaces)
+name_re = "[^#].*"  # ".*" is any number (including zero) of any characters (including whitespaces), "^#" matches any
+# character except "#"
 uri_artist_re = "spotify:artist:\S*"  # \S matches any non-whitespace character
 uri_playlist_re = "spotify:playlist:\S*"
 
