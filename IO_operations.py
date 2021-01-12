@@ -135,6 +135,7 @@ def find_latest_content_file(uri):
     :type uri: str
     :return: the path as a pathlib.Path object. When no file was found for URI, "None" is returned
     """
+
     # directory structure:
     # main dir (containing all the .py files)
     #   - content_files ( =name_of_content_directory )
@@ -145,15 +146,19 @@ def find_latest_content_file(uri):
     #       -spotify:artist:<id>
     #           ...
 
+    # remove ":" from uri and replace them with "_" as ":" may not be part of filename on some OS
+    uri = uri.replace(":", "_")
+
     # get main directory (all .py files are in the main directory)
     main_dir_path = os.path.dirname(__file__)  # returns the directory of this file
 
-    # navigate to the directory containing all content files
+    # navigate to the directory containing all content file directories
     content_file_dir_path = os.path.join(main_dir_path, name_of_content_directory)
 
     # list all files and directories of the content directory (NOT recursive)
     content_overview = listdir(content_file_dir_path)
 
+    # list all available content files for the given uri and sort them
     for directory in content_overview:
         if directory == uri and not os.path.isfile(directory):
             # find the newest / most recently saved content file
@@ -164,7 +169,7 @@ def find_latest_content_file(uri):
             latest_content_file = content_files[len(content_files)-1]
 
             # return the path to the file as a Path object (better than a String when run on different OS)
-            return pathlib.Path(latest_content_file)
+            return pathlib.Path(os.path.join(content_file_dir_path, directory, latest_content_file))
 
     # if no content file is found, return nothing
     return None
