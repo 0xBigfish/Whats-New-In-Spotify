@@ -161,3 +161,37 @@ def create_new_private_playlist(sp, name):
     :type name: str
     """
     sp.user_playlist_create(user=sp.current_user()["id"], name=name, public=False)
+
+
+def add_song_to_playlist(sp, playlist_uri, song_uri):
+    """
+    ! REQUIRES LOGIN TO SPOTIFY !
+
+    adds a song to a playlist
+
+    :param sp: the Spotify API client
+    :param song_uri: the uri of the song that will be added
+    :param playlist_uri: the uri of the playlist that the song will be added to
+    :type sp: spotipy.Spotify
+    :type song_uri: str
+    :type playlist_uri: str
+    """
+    playlist_id = get_playlist_id_from_uri(playlist_uri)
+    sp.playlist_add_items(playlist_id, [song_uri])
+
+
+def add_songs_to_playlist(sp, playlist_uri, song_uris):
+    """
+    ! REQUIRES LOGIN TO SPOTIFY !
+
+    adds multiple songs to a playlist
+
+    :param sp: the Spotify API client
+    :param song_uris: the list of uris of the songs that will be added
+    :param playlist_uri: the uri of the playlist that the song will be added to
+    :type sp: spotipy.Spotify
+    :type song_uris: list
+    :type playlist_uri: str
+    """
+    playlist_id = get_playlist_id_from_uri(playlist_uri)
+    sp.playlist_add_items(playlist_id, song_uris)
