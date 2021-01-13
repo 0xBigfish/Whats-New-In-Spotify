@@ -147,6 +147,35 @@ def read_artists_uris_from_file():
     return p_and_a_list
 
 
+def read_playlist_and_artists_names_from_file():
+    """
+    Reads playlists and artists NAMES from file and return them as a list
+
+    :return: a list of containg the name of every artist and playlist listed in the file.
+    """
+    names_list = []
+
+    # noinspection RegExpDuplicateAlternationBranch
+    # a warning is thrown but this is the correct pattern !!
+    # "\s*" = any number of any whitespace character
+    regex = re.compile(name_re + "=\s*" + uri_playlist_re + "|" +
+                       name_re + "=\s*" + uri_artist_re, re.IGNORECASE)
+
+    with open("playlists_and_artists.txt", "r") as file:
+        lines = file.readlines()
+
+    # entries must be of format: "<name> = <URI>", extract them using the regular expression
+    for line in lines:
+        match = regex.match(line)
+
+        # if a part of the line matches the regex
+        if match:
+            name_and_uri = match.group()  # get the matched string
+            names_list.append(name_and_uri.partition("=")[0])  # split it at the "="
+
+    return names_list
+
+
 def find_latest_content_file(uri):
     """
     Searches for the most recently saved content file of the playlist
