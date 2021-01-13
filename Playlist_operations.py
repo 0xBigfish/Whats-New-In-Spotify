@@ -1,13 +1,12 @@
 import json
-import sys
 
 import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
 
 from IO_operations import find_latest_content_file
-from IO_operations import read_playlist_and_artists_names_from_file
 from IO_operations import safe_playlist_to_hard_drive
 from URI_operations import get_playlist_id_from_uri
+
+RELEASE_RADAR = "spotify:playlist:7I0dtpfqqtcPYNsaJn32dF"
 
 
 def print_playlist_changes(sp, p_uri):
@@ -97,30 +96,30 @@ def print_playlist_changes(sp, p_uri):
         # print("comparing tracks")
 
         # check the playlist for new songs
-        for newTrack in latest_tracks:
+        for new_track in latest_tracks:
             flag_is_new_song = True
-            for oldTrack in old_tracks:
+            for old_track in old_tracks:
                 # if the current track matches with a track in the old list, then it's not a new song
-                if newTrack["track"]["name"] == oldTrack["track"]["name"]:
+                if new_track["track"]["uri"] == old_track["track"]["uri"]:
                     flag_is_new_song = False
                     break
 
             if flag_is_new_song:
-                song_info = {"name": newTrack["track"]["name"],
-                             "artists": newTrack["track"]["artists"]}
+                song_info = {"name": new_track["track"]["name"],
+                             "artists": new_track["track"]["artists"]}
                 new_songs.append(song_info)
 
         # check the playlist for removed songs
-        for oldTrack in old_tracks:
+        for old_track in old_tracks:
             flag_was_removed = True
-            for newTrack in latest_tracks:
-                if oldTrack["track"]["name"] == newTrack["track"]["name"]:
+            for new_track in latest_tracks:
+                if old_track["track"]["name"] == new_track["track"]["name"]:
                     flag_was_removed = False
                     break
 
             if flag_was_removed:
-                song_info = {"name": oldTrack["track"]["name"],
-                             "artists": oldTrack["track"]["artists"]}
+                song_info = {"name": old_track["track"]["name"],
+                             "artists": old_track["track"]["artists"]}
                 removed_songs.append(song_info)
 
         print("-------------------------- New Songs: --------------------------")
@@ -147,6 +146,112 @@ def print_playlist_changes(sp, p_uri):
             print(song["name"] + " - " + artists)
     else:
         print("------------------- No data for playlist yet -------------------")
+
+
+def add_new_songs_in_playlist_to_release_radar(sp, p_uri):
+    """
+    ! REQUIRES LOGIN !
+
+    songs that have newly been added to this playlist will be added to the release radar
+
+    :param p_uri: the spotify uri of the playlist
+    :param sp: the Spotify API client
+    :type p_uri: str
+    :type sp: spotipy.Spotify
+    :raise TypeError: the content file is not a json file.
+    """
+    # results is a json file
+    # object{7}:
+    #   href: https://api.spoitfy....
+    #   items [number_of_items]:
+    #       0 {6}:
+    #           added_at: 2020-12-27T23:01:00Z
+    #           added_by {5}:
+    #           is_local : false
+    #           primary_color : null
+    #           track{19}:
+    #               album{13}:
+    #               artists [number_of_artists] :
+    #                   0 {6}:
+    #                       external_urls {1}:
+    #                       href:
+    #                       id:
+    #                       name:
+    #                       type:
+    #                       uri:
+    #                   1 {6}:
+    #                       ...
+    #               available_markets [n_of_avail_markets] :
+    #               disc_number : 1
+    #               duration_ms : 140026
+    #               episode : false
+    #               explicit : true
+    #               external_ids {1}:
+    #               external_urls {1}:
+    #               href: https://api.spotify..
+    #               id : j01u0u401
+    #               is_local : false
+    #               name : Lost (feat. xyz)
+    #               popularity : 80
+    #               preview_url : null
+    #               track : true
+    #               track_number : 1
+    #               type : track
+    #               uri : spotify:track:sjfldlksjl
+    #           video_thumbnail {1} :
+    #       1 {6}:
+    #           .....
+    #
+    #   limit : 100
+    #   next : null
+    #   offset: 0
+    #   previous: null
+    #   total : 50
+
+    # playlist_items yields a dictionary or JSON file
+    results_dict = sp.playlist_items(playlist_id=get_playlist_id_from_uri(p_uri))
+
+    # get the playlists tracks
+    latest_tracks = results_dict["items"]
+
+    # read old playlist content from file
+    latest_content_file = find_latest_content_file(p_uri)
+
+    # if a content file exists for the uri:
+    if latest_content_file:
+        with open(latest_content_file, "r") as old_track_file:
+            data = old_track_file.readline()  # only reads ONE line (json files have only one (very long) line)
+
+            # if there is another line throw an error
+            if old_track_file.readline() != "":
+                raise TypeError("The content file is not a json file. Json files have only one (very long) line.")
+
+            old_results = json.loads(data)
+            old_tracks = old_results["items"]
+
+        # both are a list of dictionaries each containing the song's name and its artists names
+        new_songs = []
+
+        # check the playlist for new songs
+        for new_track in latest_tracks:
+            flag_is_new_song = True
+            for oldTrack in old_tracks:
+                # if the current track matches with a track in the old list, then it's not a new song
+                if new_track["track"]["uri"] == oldTrack["track"]["uri"]:
+                    flag_is_new_song = False
+                    break
+
+            if flag_is_new_song:
+                song_uri = new_track["track"]["uri"]
+                new_songs.append(song_uri)
+
+        # add new songs to the release radar
+        if len(new_songs) > 0:  # an error occurs when trying to add an empty list of uris to the playlist
+            add_songs_to_playlist(sp, RELEASE_RADAR, new_songs)
+
+    else:
+        # if there are no records of the playlist yet, create the first record
+        safe_playlist_to_hard_drive(sp, p_uri)
 
 
 def create_new_private_playlist(sp, name):

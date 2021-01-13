@@ -1,16 +1,12 @@
-import json
 import sys
 
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
 
-from IO_operations import find_latest_content_file
+import Playlist_operations
 from IO_operations import read_playlists_uris_from_file
 from IO_operations import safe_playlist_to_hard_drive
 from URI_operations import get_playlist_id_from_uri
-from Playlist_operations import print_playlist_changes
-from Playlist_operations import create_new_private_playlist
-
 
 REDIRECT_URI = "https://www.duckduckgo.com"
 
@@ -28,10 +24,10 @@ if len(sys.argv) > 1:
 
 
 if flag_authorization_code_flow:
-    scope = "playlist-modify-private"
+    scope = "playlist-modify-private, user-follow-modify"  # to add more just add them separated by a comma
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope, redirect_uri=REDIRECT_URI))
 
-    create_new_private_playlist(sp, "generated With Script")
+    Playlist_operations.add_new_songs_in_playlist_to_release_radar(sp, "spotify:playlist:37i9dQZF1DX36edUJpD76c")
 else:
     sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())
 
@@ -47,7 +43,7 @@ else:
         print("Checking content of '" + name + "'")
         print("Playlist ID: " + playlist_id)
         print("##########################################\n")
-        print_playlist_changes(sp, uri)
+        Playlist_operations.print_playlist_changes(sp, uri)
 
         if flag_save_content_to_file:
             print("############ Saving Content of " + name + " To Hard Drive ############")
