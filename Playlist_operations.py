@@ -148,3 +148,16 @@ def print_playlist_changes(sp, p_uri):
     else:
         print("------------------- No data for playlist yet -------------------")
 
+
+def create_new_private_playlist(sp, name):
+    """
+    ! REQUIRES LOGIN TO SPOTIFY !
+
+    creates a new playlist called <name> for the user that is currently logged in
+
+    :param sp: the Spotify API client
+    :param name: what the playlist will be named
+    :type sp: spotipy.Spotify
+    :type name: str
+    """
+    sp.user_playlist_create(user=sp.current_user()["id"], name=name, public=False)
