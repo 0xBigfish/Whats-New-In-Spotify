@@ -195,3 +195,37 @@ def add_songs_to_playlist(sp, playlist_uri, song_uris):
     """
     playlist_id = get_playlist_id_from_uri(playlist_uri)
     sp.playlist_add_items(playlist_id, song_uris)
+
+
+def remove_song_from_playlist(sp, playlist_uri, song_uri):
+    """
+    ! REQUIRES LOGIN TO SPOTIFY !
+
+    removes all occurrences of the song in the playlist
+
+    :param sp: the Spotify API client
+    :param song_uri: the uri of the song that will be removed
+    :param playlist_uri: the uri of the playlist that the song will be removed from
+    :type sp: spotipy.Spotify
+    :type song_uri: str
+    :type playlist_uri: str
+    """
+    playlist_id = get_playlist_id_from_uri(playlist_uri)
+    sp.playlist_remove_all_occurrences_of_items(playlist_id, [song_uri])
+
+
+def remove_songs_from_playlist(sp, playlist_uri, song_uris):
+    """
+    ! REQUIRES LOGIN TO SPOTIFY !
+
+    removes all occurrences of the song in the playlist
+
+    :param sp: the Spotify API client
+    :param song_uris: the list of uris of the song that will be removed
+    :param playlist_uri: the uri of the playlist that the songs will be removed from
+    :type sp: spotipy.Spotify
+    :type song_uris: list
+    :type playlist_uri: str
+    """
+    playlist_id = get_playlist_id_from_uri(playlist_uri)
+    sp.playlist_remove_all_occurrences_of_items(playlist_id, song_uris)
