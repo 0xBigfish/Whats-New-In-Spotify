@@ -20,10 +20,9 @@ def safe_playlist_to_hard_drive(sp, uri):
     """
     Saves the playlist's content to a file
 
-    :param sp: the connection to spotify ( like sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())
-     for example )
+    :param sp: the Spotify API client
     :param uri: the spotify uri of the playlist
-    :type sp: Spotify
+    :type sp: spotipy.Spotify
     :type uri: str
     """
 
