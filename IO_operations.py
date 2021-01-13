@@ -4,6 +4,7 @@ from datetime import date
 import pathlib
 from os import listdir
 import os.path
+from URI_operations import get_playlist_id_from_uri
 
 name_of_content_directory = "content_files"
 
@@ -15,25 +16,45 @@ uri_artist_re = "spotify:artist:\S*"  # \S matches any non-whitespace character
 uri_playlist_re = "spotify:playlist:\S*"
 
 
-def safe_playlist_to_hard_drive(sp, playlist_id):
+def safe_playlist_to_hard_drive(sp, uri):
     """
     Saves the playlist's content to a file
 
     :param sp: the connection to spotify ( like sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())
      for example )
-    :param playlist_id: the spotify id of the playlist
+    :param uri: the spotify uri of the playlist
     :type sp: Spotify
-    :type playlist_id: str
+    :type uri: str
     """
 
-    # get current date and change the date format to dd.mm.yyyy
+    # get current date and change the date format to yyyy.mm.dd
     today = str(date.today())  # current format: yyyy-mm-dd
-    today = today.split("-")[2] + "." + today.split("-")[1] + "." + today.split("-")[0]
+    today = today.replace("-", ".")
 
-    with open("ModusMio_content_raw(" + today + ").txt", "w") as file:
-        content = sp.playlist_items(playlist_id=playlist_id)
-        json.dump(content, file)
-        file.close()
+    # rename a uri "spotify:playlist:37 ..." to "spotify_playlist_37 ..."
+    uri_directory_name = uri.replace(":", "_")
+    file_name = uri_directory_name + "_content_raw(" + today + ").txt"
+
+    # get main directory (all .py files are in the main directory)
+    main_dir_path = os.path.dirname(__file__)  # returns the directory of this file
+
+    # navigate to the directory containing all content file directories
+    content_file_dir_path = os.path.join(main_dir_path, name_of_content_directory)
+
+    uri_directory_path = os.path.join(content_file_dir_path, uri_directory_name)
+
+    # check if the needed directory already exists, if not create it
+    try:
+        os.mkdir(uri_directory_path)
+    except FileExistsError:
+        print("directory " + uri_directory_name + " already exists")
+    finally:
+        # get the content of the playlist and save it into a file called <uri>_(<currentDate>).txt
+        file_path = os.path.join(uri_directory_path, file_name)
+        with open(file_path, "w") as file:
+            content = sp.playlist_items(playlist_id=get_playlist_id_from_uri(uri))
+            json.dump(content, file)
+            file.close()
 
 
 def read_playlists_and_artists_uris_from_file():
