@@ -32,7 +32,7 @@ def safe_playlist_to_hard_drive(sp, uri):
 
     # rename a uri "spotify:playlist:37 ..." to "spotify_playlist_37 ..."
     uri_directory_name = uri.replace(":", "_")
-    file_name = uri_directory_name + "_content_raw(" + today + ").txt"
+    file_name = uri_directory_name + "_content_raw(" + today + ").json"
 
     # get main directory (all .py files are in the main directory)
     main_dir_path = os.path.dirname(__file__)  # returns the directory of this file
