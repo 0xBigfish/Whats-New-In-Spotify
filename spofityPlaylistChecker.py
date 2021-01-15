@@ -27,7 +27,13 @@ if flag_authorization_code_flow:
     scope = "playlist-modify-private, user-follow-modify"  # to add more just add them separated by a comma
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope, redirect_uri=REDIRECT_URI))
 
-    Playlist_operations.add_new_songs_in_playlist_to_release_radar(sp, "spotify:playlist:37i9dQZF1DX36edUJpD76c")
+    playlist_list = read_playlists_uris_from_file()
+    for playlist_data in playlist_list:
+        name = playlist_data[0]
+        uri = playlist_data[1]
+
+        Playlist_operations.add_new_songs_in_playlist_to_release_radar(sp, uri)
+
 else:
     sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())
 
