@@ -1,9 +1,10 @@
 import json
+import os.path
+import pathlib
 import re
 from datetime import date
-import pathlib
 from os import listdir
-import os.path
+
 from URI_operations import get_playlist_id_from_uri
 
 name_of_content_directory = "content_files"
@@ -217,8 +218,22 @@ def find_latest_content_file(uri):
             # because of the date format yyyy.mm.dd the newest file will be at the end of the SORTED list
             latest_content_file = content_files[len(content_files)-1]
 
-            # return the path to the file as a Path object (better than a String when run on different OS)
-            return pathlib.Path(os.path.join(content_file_dir_path, directory, latest_content_file))
+            # ignore the file if it is from the current day. Otherwise the method works only once a day correctly
+            # content files always end with a date at the end, i.e. spotify_playlist_<id>_content_raw(2021.01.14).json
+            content_file_date = latest_content_file.replace(".json", "")[-11:-1]  # gets the date
+            today = str(date.today()).replace("-", ".")  # format now: yyyy.mm.dd
+
+            if not today == content_file_date:
+                # return the path to the file as a Path object (better than a String when run on different OS)
+                return pathlib.Path(os.path.join(content_file_dir_path, directory, latest_content_file))
+
+            elif len(content_files) > 1:
+                # get the second most recent entry
+                return pathlib.Path(os.path.join(content_file_dir_path, directory, content_files[len(content_files)-2]))
+            
+            else:
+                # if there is only one content file and it's from today, act like there is no content file
+                return None
 
     # if no content file is found, return nothing
     return None
