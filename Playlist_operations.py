@@ -3,7 +3,7 @@ import json
 import spotipy
 
 from IO_operations import find_latest_content_file
-from IO_operations import safe_playlist_to_hard_drive
+from IO_operations import safe_uri_content_to_hard_drive
 from URI_operations import get_playlist_id_from_uri
 
 RELEASE_RADAR = "spotify:playlist:7I0dtpfqqtcPYNsaJn32dF"
@@ -251,7 +251,7 @@ def add_new_songs_in_playlist_to_release_radar(sp, p_uri):
 
     else:
         # if there are no records of the playlist yet, create the first record
-        safe_playlist_to_hard_drive(sp, p_uri)
+        safe_uri_content_to_hard_drive(sp, p_uri)
 
 
 def create_new_private_playlist(sp, name):

@@ -17,7 +17,7 @@ uri_artist_re = "spotify:artist:\S*"  # \S matches any non-whitespace character
 uri_playlist_re = "spotify:playlist:\S*"
 
 
-def safe_playlist_to_hard_drive(sp, uri):
+def safe_uri_content_to_hard_drive(sp, uri):
     """
     Saves the playlist's content to a file
 
@@ -44,17 +44,15 @@ def safe_playlist_to_hard_drive(sp, uri):
     uri_directory_path = os.path.join(content_file_dir_path, uri_directory_name)
 
     # check if the needed directory already exists, if not create it
-    try:
+    if not os.path.isdir(uri_directory_path):
         os.mkdir(uri_directory_path)
-    except FileExistsError:
-        print("directory " + uri_directory_name + " already exists")
-    finally:
-        # get the content of the playlist and save it into a file called <uri>_(<currentDate>).txt
-        file_path = os.path.join(uri_directory_path, file_name)
-        with open(file_path, "w") as file:
-            content = sp.playlist_items(playlist_id=get_playlist_id_from_uri(uri))
-            json.dump(content, file)
-            file.close()
+
+    # get the content of the playlist and save it into a file called <uri>_content_raw(<currentDate>).json
+    file_path = os.path.join(uri_directory_path, file_name)
+    with open(file_path, "w") as file:
+        content = sp.playlist_items(playlist_id=get_playlist_id_from_uri(uri))
+        json.dump(content, file)
+        file.close()
 
 
 def read_playlists_and_artists_uris_from_file():

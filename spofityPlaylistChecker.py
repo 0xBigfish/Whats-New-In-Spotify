@@ -5,7 +5,7 @@ from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
 
 import Playlist_operations
 from IO_operations import read_playlists_uris_from_file
-from IO_operations import safe_playlist_to_hard_drive
+from IO_operations import safe_uri_content_to_hard_drive
 from URI_operations import get_playlist_id_from_uri
 
 REDIRECT_URI = "https://www.duckduckgo.com"
@@ -53,4 +53,4 @@ else:
 
         if flag_save_content_to_file:
             print("############ Saving Content of " + name + " To Hard Drive ############")
-            safe_playlist_to_hard_drive(sp, uri)
+            safe_uri_content_to_hard_drive(sp, uri)
