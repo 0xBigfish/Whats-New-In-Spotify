@@ -176,3 +176,8 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+
+### Spotify Playlist Checker exclusive
+# ignore content files
+*_content_raw*.json
