@@ -82,8 +82,7 @@ def print_playlist_changes(sp, p_uri):
 
             # if there is another line throw an error
             if oldTrackFile.readline() != "":
-                print("error: not a json format (file has more than one single line)")
-                # TODO: throw error or stop further execution of this script
+                raise TypeError("the file is empty or not a json file. Path: " + latest_content_file)
 
             old_results = json.loads(data)
             old_tracks = old_results["items"]
@@ -300,8 +299,10 @@ def add_songs_to_playlist(sp, playlist_uri, song_uris):
     :type song_uris: list
     :type playlist_uri: str
     """
-    playlist_id = get_playlist_id_from_uri(playlist_uri)
-    sp.playlist_add_items(playlist_id, song_uris)
+    # an error occurs when trying to add an emtpy list of songs to the playlist
+    if len(song_uris) > 1:
+        playlist_id = get_playlist_id_from_uri(playlist_uri)
+        sp.playlist_add_items(playlist_id, song_uris)
 
 
 def remove_song_from_playlist(sp, playlist_uri, song_uri):
@@ -325,7 +326,7 @@ def remove_songs_from_playlist(sp, playlist_uri, song_uris):
     """
     ! REQUIRES LOGIN TO SPOTIFY !
 
-    removes all occurrences of the song in the playlist
+    removes all occurrences of the songs in the playlist
 
     :param sp: the Spotify API client
     :param song_uris: the list of uris of the song that will be removed
@@ -334,8 +335,10 @@ def remove_songs_from_playlist(sp, playlist_uri, song_uris):
     :type song_uris: list
     :type playlist_uri: str
     """
-    playlist_id = get_playlist_id_from_uri(playlist_uri)
-    sp.playlist_remove_all_occurrences_of_items(playlist_id, song_uris)
+    # an error occurs when trying to remove an empty list of songs from the playlist
+    if len(song_uris) > 1:
+        playlist_id = get_playlist_id_from_uri(playlist_uri)
+        sp.playlist_remove_all_occurrences_of_items(playlist_id, song_uris)
 
 
 def remove_duplicate_songs_from_playlist(sp, playlist_uri):
