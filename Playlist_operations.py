@@ -4,10 +4,9 @@ import spotipy
 
 from IO_operations import find_latest_content_file
 from IO_operations import safe_uri_content_to_hard_drive
-from URI_operations import get_playlist_id_from_uri
+from URI_operations import *
 
 RELEASE_RADAR = "spotify:playlist:7I0dtpfqqtcPYNsaJn32dF"
-
 
 def print_playlist_changes(sp, p_uri):
     """
@@ -148,17 +147,18 @@ def print_playlist_changes(sp, p_uri):
         print("------------------- No data for playlist yet -------------------")
 
 
-def add_new_songs_in_playlist_to_release_radar(sp, p_uri):
+def get_new_songs_in_playlist(sp, p_uri):
     """
-    ! REQUIRES LOGIN !
+    songs that have newly been added to this playlist will be added to the release radar.
 
-    songs that have newly been added to this playlist will be added to the release radar
+    if no content file is found for the playlist, a new content file is created.
 
     :param p_uri: the spotify uri of the playlist
     :param sp: the Spotify API client
     :type p_uri: str
     :type sp: spotipy.Spotify
     :raise TypeError: the content file is not a json file.
+    :return a list containing all new songs in the playlist
     """
     # results is a json file
     # object{7}:
@@ -236,7 +236,7 @@ def add_new_songs_in_playlist_to_release_radar(sp, p_uri):
         for new_track in latest_tracks:
             flag_is_new_song = True
             for oldTrack in old_tracks:
-                # if the current track matches with a track in the old list, then it's not a new song
+                # if the current track's uri matches with a uri in the old list, then it's not a new song
                 if new_track["track"]["uri"] == oldTrack["track"]["uri"]:
                     flag_is_new_song = False
                     break
@@ -245,13 +245,15 @@ def add_new_songs_in_playlist_to_release_radar(sp, p_uri):
                 song_uri = new_track["track"]["uri"]
                 new_songs.append(song_uri)
 
-        # add new songs to the release radar
-        if len(new_songs) > 0:  # an error occurs when trying to add an empty list of uris to the playlist
-            add_songs_to_playlist(sp, RELEASE_RADAR, new_songs)
+        # remove duplicate entries using list comprehension
+        song_uris = [s for n, s in enumerate(new_songs) if s not in new_songs[:n]]
+
+        return song_uris
 
     else:
         # if there are no records of the playlist yet, create the first record
         safe_uri_content_to_hard_drive(sp, p_uri)
+        return []
 
 
 def create_new_private_playlist(sp, name):
@@ -334,3 +336,41 @@ def remove_songs_from_playlist(sp, playlist_uri, song_uris):
     """
     playlist_id = get_playlist_id_from_uri(playlist_uri)
     sp.playlist_remove_all_occurrences_of_items(playlist_id, song_uris)
+
+
+def remove_duplicate_songs_from_playlist(sp, playlist_uri):
+    """
+    ! REQUIRES LOGIN TO SPOTIFY !
+
+    removes all duplicates of all songs in the playlist; only the OLDEST entry of a song will remain
+
+    :param sp: the Spotify API client
+    :param playlist_uri: the uri of the playlist that the songs will be removed from
+    :type sp: spotipy.Spotify
+    :type playlist_uri: str
+    """
+    p_id = get_playlist_id_from_uri(playlist_uri)
+
+    # see add_new_songs_in_playlist_to_release_radar for a more detailed documentation of results_dict (json file)
+    results_dict = sp.playlist_items(p_id)
+    song_uris = [results_dict["items"][i]["track"]["uri"] for i in range(0, len(results_dict["items"]))]
+    items_to_remove = []
+
+    # important: j starts at i+1
+    for i in range(0, len(song_uris)):
+        duplicates_indices = []
+        for j in range(i+1, len(song_uris)):
+            # if a song occurs multiple times
+            if song_uris[i] == song_uris[j]:
+                duplicates_indices.append(j)
+
+        # there are multiple occurrences of the song
+        if len(duplicates_indices) > 0:
+            # data is the format the spotipy library expects when calling playlist_remove_specific_occurrences_of_items
+            data = {"uri": get_song_id_from_uri(song_uris[i]),
+                    "positions": duplicates_indices}
+            items_to_remove.append(data)
+
+    # for performance reasons, do not send a request if there are no songs to be removed
+    if len(items_to_remove) > 0:
+        sp.playlist_remove_specific_occurrences_of_items(p_id, items_to_remove)
