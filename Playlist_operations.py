@@ -8,6 +8,7 @@ from URI_operations import *
 
 RELEASE_RADAR = "spotify:playlist:7I0dtpfqqtcPYNsaJn32dF"
 
+
 def print_playlist_changes(sp, p_uri):
     """
     Prints the changes made to the playlist, compared to the latest content file, to the console.
@@ -146,9 +147,9 @@ def print_playlist_changes(sp, p_uri):
         print("------------------- No data for playlist yet -------------------")
 
 
-def get_new_songs_in_playlist(sp, p_uri):
+def get_all_songs_from_playlist(sp, p_uri):
     """
-    songs that have newly been added to this playlist will be added to the release radar.
+    returns a list containing the song uri of each song in the playlist
 
     if no content file is found for the playlist, a new content file is created.
 
@@ -157,7 +158,7 @@ def get_new_songs_in_playlist(sp, p_uri):
     :type p_uri: str
     :type sp: spotipy.Spotify
     :raise TypeError: the content file is not a json file.
-    :return a list containing all new songs in the playlist
+    :return a list of every song's uri in the playlist
     """
     # results is a json file
     # object{7}:
@@ -206,18 +207,36 @@ def get_new_songs_in_playlist(sp, p_uri):
     #   offset: 0
     #   previous: null
     #   total : 50
-
     # playlist_items yields a dictionary or JSON file
     results_dict = sp.playlist_items(playlist_id=get_playlist_id_from_uri(p_uri))
 
     # get the playlists tracks
     latest_tracks = results_dict["items"]
 
+    return [new_track["track"]["uri"] for new_track in latest_tracks]
+
+
+def get_new_songs_in_playlist(sp, p_uri):
+    """
+    songs that have newly been added to this playlist will be added to the release radar.
+
+    if no content file is found for the playlist, a new content file is created.
+
+    :param p_uri: the spotify uri of the playlist
+    :param sp: the Spotify API client
+    :type p_uri: str
+    :type sp: spotipy.Spotify
+    :return a list containing all new songs in the playlist
+    """
     # read old playlist content from file
     latest_content_file = find_latest_content_file(p_uri)
 
     # if a content file exists for the uri:
     if latest_content_file:
+
+        # get the uris of the songs currently in the playlist
+        song_uris_in_playlist = get_all_songs_from_playlist(sp, p_uri)
+
         with open(latest_content_file, "r") as old_track_file:
             data = old_track_file.readline()  # only reads ONE line (json files have only one (very long) line)
 
@@ -226,23 +245,10 @@ def get_new_songs_in_playlist(sp, p_uri):
                 raise TypeError("The content file is not a json file. Json files have only one (very long) line.")
 
             old_results = json.loads(data)
-            old_tracks = old_results["items"]
+            old_tracks_uris = [song_data["track"]["uri"] for song_data in old_results["items"]]
 
-        # both are a list of dictionaries each containing the song's name and its artists names
-        new_songs = []
-
-        # check the playlist for new songs
-        for new_track in latest_tracks:
-            flag_is_new_song = True
-            for oldTrack in old_tracks:
-                # if the current track's uri matches with a uri in the old list, then it's not a new song
-                if new_track["track"]["uri"] == oldTrack["track"]["uri"]:
-                    flag_is_new_song = False
-                    break
-
-            if flag_is_new_song:
-                song_uri = new_track["track"]["uri"]
-                new_songs.append(song_uri)
+        # check the playlist for new songs by check whether they were already in the old content_file or not
+        new_songs = [song for song in song_uris_in_playlist if not old_tracks_uris.__contains__(song)]
 
         # remove duplicate entries using list comprehension
         song_uris = [s for n, s in enumerate(new_songs) if s not in new_songs[:n]]
@@ -354,7 +360,7 @@ def remove_duplicate_songs_from_playlist(sp, playlist_uri):
     """
     p_id = get_playlist_id_from_uri(playlist_uri)
 
-    # see add_new_songs_in_playlist_to_release_radar for a more detailed documentation of results_dict (json file)
+    # see get_all_songs_from_playlist() for a more detailed documentation of results_dict (json file)
     results_dict = sp.playlist_items(p_id)
     song_uris = [results_dict["items"][i]["track"]["uri"] for i in range(0, len(results_dict["items"]))]
     items_to_remove = []
