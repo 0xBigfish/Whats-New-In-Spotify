@@ -181,3 +181,4 @@ fabric.properties
 ### Spotify Playlist Checker exclusive
 # ignore content files
 *_content_raw*.json
+playlists_and_artists.txt
