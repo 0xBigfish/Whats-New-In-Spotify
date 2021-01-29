@@ -347,6 +347,21 @@ def remove_songs_from_playlist(sp, playlist_uri, song_uris):
         sp.playlist_remove_all_occurrences_of_items(playlist_id, song_uris)
 
 
+def remove_all_songs_from_playlist(sp, playlist_uri):
+    """
+    ! REQUIRES LOGIN TO SPOTIFY !
+
+    removes every song from the playlist
+
+    :param sp: the Spotify API client
+    :param playlist_uri: the uri of the playlist that the songs will be removed from
+    :type sp: spotipy.Spotify
+    :type playlist_uri: str
+    """
+    song_uris = get_all_songs_from_playlist(sp, playlist_uri)
+    sp.playlist_remove_all_occurrences_of_items(get_playlist_id_from_uri(playlist_uri), song_uris)
+
+
 def remove_duplicate_songs_from_playlist(sp, playlist_uri):
     """
     ! REQUIRES LOGIN TO SPOTIFY !

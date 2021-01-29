@@ -39,8 +39,13 @@ if flag_authorization_code_flow:
         # remove duplicates using list comprehension
         no_duplicates = [s for n, s in enumerate(new_tracks) if s not in new_tracks[:n]]
 
-    print("adding songs")
-    Playlist_operations.add_songs_to_playlist(sp, RELEASE_RADAR, no_duplicates)
+    print("emptying playlist")
+    Playlist_operations.remove_all_songs_from_playlist(sp, RELEASE_RADAR)
+    if no_duplicates:
+        print("adding songs")
+        Playlist_operations.add_songs_to_playlist(sp, RELEASE_RADAR, no_duplicates)
+    else:
+        print("no new songs")
     print("done")
 
 else:
