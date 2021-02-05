@@ -5,16 +5,16 @@ import re
 from datetime import date
 from os import listdir
 
-from URI_operations import get_playlist_id_from_uri
+import URI_operations
 
 name_of_content_directory = "content_files"
 
 # ------------------------------------------------ Regular Expression --------------------------------------------------
 # check valid line with a regular expression
-name_re = "[^#].*"  # ".*" is any number (including zero) of any characters (including whitespaces), "^#" matches any
+_NAME_RE = "[^#].*"  # ".*" is any number (including zero) of any characters (including whitespaces), "^#" matches any
 # character except "#"
-uri_artist_re = "spotify:artist:\S*"  # \S matches any non-whitespace character
-uri_playlist_re = "spotify:playlist:\S*"
+_URI_ARTIST_RE = "spotify:artist:\S*"  # \S matches any non-whitespace character
+_URI_PLAYLIST_RE = "spotify:playlist:\S*"
 
 
 def safe_uri_content_to_hard_drive(sp, uri):
@@ -50,7 +50,7 @@ def safe_uri_content_to_hard_drive(sp, uri):
     # get the content of the playlist and save it into a file called <uri>_content_raw(<currentDate>).json
     file_path = os.path.join(uri_directory_path, file_name)
     with open(file_path, "w") as file:
-        content = sp.playlist_items(playlist_id=get_playlist_id_from_uri(uri))
+        content = sp.playlist_items(playlist_id=URI_operations.get_playlist_id_from_uri(uri))
         json.dump(content, file)
         file.close()
 
@@ -67,8 +67,8 @@ def read_playlists_and_artists_uris_from_file():
     # noinspection RegExpDuplicateAlternationBranch
     # a warning is thrown but this is the correct pattern !!
     # "\s*" = any number of any whitespace character
-    regex = re.compile(name_re + "=\s*" + uri_playlist_re + "|" +
-                       name_re + "=\s*" + uri_artist_re, re.IGNORECASE)
+    regex = re.compile(_NAME_RE + "=\s*" + _URI_PLAYLIST_RE + "|" +
+                       _NAME_RE + "=\s*" + _URI_ARTIST_RE, re.IGNORECASE)
 
     with open("playlists_and_artists.txt", "r") as file:
         lines = file.readlines()
@@ -98,7 +98,7 @@ def read_playlists_uris_from_file():
     # noinspection RegExpDuplicateAlternationBranch
     # a warning is thrown but this is the correct pattern !!
     # "\s*" = any number of any whitespace character
-    regex = re.compile(name_re + "=\s*" + uri_playlist_re, re.IGNORECASE)
+    regex = re.compile(_NAME_RE + "=\s*" + _URI_PLAYLIST_RE, re.IGNORECASE)
 
     with open("playlists_and_artists.txt", "r") as file:
         lines = file.readlines()
@@ -128,7 +128,7 @@ def read_artists_uris_from_file():
     # noinspection RegExpDuplicateAlternationBranch
     # a warning is thrown but this is the correct pattern !!
     # "\s*" = any number of any whitespace character
-    regex = re.compile(name_re + "=\s*" + uri_artist_re, re.IGNORECASE)
+    regex = re.compile(_NAME_RE + "=\s*" + _URI_ARTIST_RE, re.IGNORECASE)
 
     with open("playlists_and_artists.txt", "r") as file:
         lines = file.readlines()
@@ -157,8 +157,8 @@ def read_playlist_and_artists_names_from_file():
     # noinspection RegExpDuplicateAlternationBranch
     # a warning is thrown but this is the correct pattern !!
     # "\s*" = any number of any whitespace character
-    regex = re.compile(name_re + "=\s*" + uri_playlist_re + "|" +
-                       name_re + "=\s*" + uri_artist_re, re.IGNORECASE)
+    regex = re.compile(_NAME_RE + "=\s*" + _URI_PLAYLIST_RE + "|" +
+                       _NAME_RE + "=\s*" + _URI_ARTIST_RE, re.IGNORECASE)
 
     with open("playlists_and_artists.txt", "r") as file:
         lines = file.readlines()
