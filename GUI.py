@@ -20,16 +20,26 @@ artist_layout = [[name] for name in artist_names]
 
 # Define the window's contents
 # the windows is divided into a grid. "layout" is a list of list, representing columns and rows
+release_radar_layout = [
+    [sg.Text("Playlist")],
+    [sg.Column(scrollable=True, layout=playlist_layout, size=(250, 250))],
+    [sg.Text("Artists")],
+    [sg.Column(scrollable=True, vertical_scroll_only=True, layout=artist_layout)]
+]
+
+buttons_layout = [
+    [sg.Button("Run", size=(15, 1), key="-RunButton-")],
+    [sg.Button("New Group", size=(15, 1), key="-NewGroupButton-")],
+    [sg.Button("Add", size=(15, 1), key="-AddButton-")],
+    [sg.Button("Remove", size=(15, 1), key="-RemoveButton-")],
+    [sg.Button("Bonus Features", size=(15, 1), key="-BonusFeaturesButton-")]
+]
+
+
 main_window_layout = \
-    [[sg.Text("Release Radar"), sg.Text("", size=(10, 1)), sg.Button("Run", size=(10, 1), key="-RunButton-"),
-      sg.Button("New Group", size=(10, 1), key="-NewGroupButton-")],
-
-     [sg.Text("Playlist"), sg.Text("", size=(15, 1)), sg.Button("Add", size=(10, 1), key="-AddButton-"),
-      sg.Button("Remove", size=(10, 1), key="-RemoveButton-")],
-
-     [sg.Column(vertical_scroll_only=True, layout=playlist_layout)],
-     [sg.Text("Artists")],
-     [sg.Column(vertical_scroll_only=True, layout=artist_layout)],
+    [[sg.Text("Release Radar")],
+     [sg.Text("", size=(10, 1))],  # blank line
+     [sg.Column(layout=release_radar_layout), sg.Column(layout=buttons_layout, vertical_alignment="top")],
      [sg.Text("", size=(10, 1))],  # blank line
      [sg.Input(key='-INPUT-')],
      [sg.Text(size=(40, 1), key='-OUTPUT-')],
@@ -39,7 +49,6 @@ main_window_layout = \
 # Create the window
 window = sg.Window("What\'s new in Spotify", main_window_layout)
 
-second_window_open = False
 
 # Display and interact with the Window using an Event Loop
 while True:
