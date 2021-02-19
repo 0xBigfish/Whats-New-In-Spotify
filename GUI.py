@@ -1,3 +1,5 @@
+# sg is the default PySimpleGUI naming convention for the import
+# noinspection PyPep8Naming
 import PySimpleGUI as sg
 
 import IO_operations
@@ -68,20 +70,22 @@ while True:
         window_add.close()
         window.force_focus()
 
-    # when "Add" button is pressed, open an input window
+    # when "Remove" button is pressed, open an input window
     if event == "-RemoveButton-":
         window.disable()  # freeze the main window until the user has made their input
 
         # both playlist and artist layouts have already been used in the main window. PySimpleGUI enforces that each
         # layout may only be used ONCE. Just assign the same values to new variables / layouts here.
-        # Also they need a different format as their values will be fed into the Listbox
+        # They also need a different format as their values will be fed into the Listbox
         playlist_name_and_uris = IO_operations.read_playlists_uris_from_file()
         playlist_names_only = [playlist_tuple[0] for playlist_tuple in playlist_name_and_uris]
 
         artist_name_and_uris = IO_operations.read_artists_uris_from_file()
-        artist_names_only = [sg.Text(artist_tuple[0]) for artist_tuple in artist_name_and_uris]
+        artist_names_only = [artist_tuple[0] for artist_tuple in artist_name_and_uris]
 
         # layout of the window that opens when the "Remove" button is pressed
+        # the columns contain listboxs, where the user can select multiple entries which will then be removed from the
+        # release radar
         column1 = [
             [sg.Text("Playlists")],
             [sg.Listbox(values=playlist_names_only, size=(50, 10),
