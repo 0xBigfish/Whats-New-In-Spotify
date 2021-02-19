@@ -56,16 +56,61 @@ while True:
             [sg.Input(size=(40, 1), key="-AddWindowName-"), sg.Input(size=(40, 1), key="-AddWindowURI-")],
             [sg.Button("Confirm", size=(10, 1))]]
 
-        add_window = sg.Window("What\'s new in Spotify", layout_add_window)
+        window_add = sg.Window("What\'s new in Spotify", layout_add_window)
 
-        event_add, values_add = add_window.read()
+        event_add, values_add = window_add.read()
         while True:
             if event_add == sg.WINDOW_CLOSED or event_add == "Confirm":
                 break
 
         # close the input window and unfreeze the main window
         window.enable()
-        add_window.close()
+        window_add.close()
+        window.force_focus()
+
+    # when "Add" button is pressed, open an input window
+    if event == "-RemoveButton-":
+        window.disable()  # freeze the main window until the user has made their input
+
+        # both playlist and artist layouts have already been used in the main window. PySimpleGUI enforces that each
+        # layout may only be used ONCE. Just assign the same values to new variables / layouts here.
+        # Also they need a different format as their values will be fed into the Listbox
+        playlist_name_and_uris = IO_operations.read_playlists_uris_from_file()
+        playlist_names_only = [playlist_tuple[0] for playlist_tuple in playlist_name_and_uris]
+
+        artist_name_and_uris = IO_operations.read_artists_uris_from_file()
+        artist_names_only = [sg.Text(artist_tuple[0]) for artist_tuple in artist_name_and_uris]
+
+        # layout of the window that opens when the "Remove" button is pressed
+        column1 = [
+            [sg.Text("Playlists")],
+            [sg.Listbox(values=playlist_names_only, size=(50, 10),
+                        select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE)]
+        ]
+        column2 = [
+            [sg.Text("Artists")],
+            [sg.Listbox(values=artist_names_only, size=(50, 10),
+                        select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE)]
+        ]
+
+        layout_remove_window = [
+            [sg.Text("Select playlists and artist to be removed", size=(30, 1))],
+            [sg.Checkbox("Show Spotify URI", key="-UriCheckbox-", size=(30, 2))],
+            [sg.Column(vertical_scroll_only=True, layout=column1),
+             sg.Column(vertical_scroll_only=True, layout=column2)],
+            [sg.Button("Remove Selected", size=(30, 2)), sg.Button("Go Back", size=(30, 2))]
+            ]
+
+        window_remove = sg.Window("What\'s new in Spotify", layout_remove_window)
+
+        event_remove, values_remove = window_remove.read()
+        while True:
+            if event_remove == sg.WINDOW_CLOSED or event_remove == "Go Back":
+                break
+
+        # close the input window and unfreeze the main window
+        window.enable()
+        window_remove.close()
         window.force_focus()
 
 # Finish up by removing from the screen
