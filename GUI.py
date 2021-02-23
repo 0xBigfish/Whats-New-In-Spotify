@@ -11,21 +11,35 @@ import IO_operations
 #                                                                                       #
 #########################################################################################
 
+playlist_tuples = IO_operations.read_playlists_uris_from_file()
+artist_tuples = IO_operations.read_artists_uris_from_file()
 
-playlist_names = [sg.Text(playlist_tuple[0]) for playlist_tuple in IO_operations.read_playlists_uris_from_file()]
-artist_names = [sg.Text(artist_tuple[0]) for artist_tuple in IO_operations.read_artists_uris_from_file()]
+playlist_names = [sg.Text(playlist_tuple[0]) for playlist_tuple in playlist_tuples]
+playlist_names_and_uris = [sg.Text(playlist_tuple) for playlist_tuple in playlist_tuples]
+artist_names = [sg.Text(artist_tuple[0]) for artist_tuple in artist_tuples]
+artist_names_and_uris = [sg.Text(artist_tuple) for artist_tuple in artist_tuples]
 
 playlist_layout = [[name] for name in playlist_names]
 artist_layout = [[name] for name in artist_names]
 
 # Define the window's contents
 # the windows is divided into a grid. "layout" is a list of list, representing columns and rows
-release_radar_layout = [
-    [sg.Text("Playlist")],
-    [sg.Column(scrollable=True, layout=playlist_layout, size=(250, 250))],
-    [sg.Text("Artists")],
-    [sg.Column(scrollable=True, vertical_scroll_only=True, layout=artist_layout)]
+# currently there are two layout themes:
+release_radar_layout_frames = [
+    [sg.Frame("Playlists", layout=[
+#        [sg.Listbox(values=playlist_layout, size=(50, 10), select_mode=sg.LISTBOX_SELECT_MODE_EXTENDED)]], font="default 12 bold")],
+        [sg.Column(scrollable=True, layout=playlist_layout, size=(350, 250))]], font="default 12 bold")],
+    [sg.Frame("Artists", layout=[
+        [sg.Column(scrollable=True, layout=artist_layout, size=(350, 250))]], font="default 12 bold")],
 ]
+# if this is not commented an error is thrown: "YOU ARE ATTEMPTING TO REUSE AN ELEMENT IN YOUR LAYOUT!"
+# release_radar_layout_no_frames = [
+#    [sg.Text("Playlist")],
+#    [sg.Column(scrollable=True, layout=playlist_layout, size=(250, 250))],
+#    [sg.Text("Artists")],
+#    [sg.Column(scrollable=True, layout=artist_layout, size=(250, 250))]
+# ]
+
 
 buttons_layout = [
     [sg.Button("Run", size=(15, 1), key="-RunButton-")],
@@ -37,12 +51,10 @@ buttons_layout = [
 
 
 main_window_layout = \
-    [[sg.Text("Release Radar")],
+    [[sg.Text("Release Radar", font="default 14 bold"), sg.Button("Settings", size=(15, 1),)],
+     [sg.Checkbox("Show Spotify URIs")],
      [sg.Text("", size=(10, 1))],  # blank line
-     [sg.Column(layout=release_radar_layout), sg.Column(layout=buttons_layout, vertical_alignment="top")],
-     [sg.Text("", size=(10, 1))],  # blank line
-     [sg.Input(key='-INPUT-')],
-     [sg.Text(size=(40, 1), key='-OUTPUT-')],
+     [sg.Column(layout=release_radar_layout_frames), sg.Column(layout=buttons_layout, vertical_alignment="top")],
      [sg.Button('Ok'), sg.Button('Quit')]]
 
 
