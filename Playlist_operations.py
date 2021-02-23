@@ -1,4 +1,5 @@
 import json
+import math
 
 import spotipy
 
@@ -158,7 +159,7 @@ def get_all_songs_from_playlist(sp, p_uri):
     :type p_uri: str
     :type sp: spotipy.Spotify
     :raise TypeError: the content file is not a json file.
-    :return a list of every song's uri in the playlist
+    :return a list[str] of every song uri in the playlist
     """
     # results is a json file
     # object{7}:
@@ -302,13 +303,21 @@ def add_songs_to_playlist(sp, playlist_uri, song_uris):
     :param song_uris: the list of uris of the songs that will be added
     :param playlist_uri: the uri of the playlist that the song will be added to
     :type sp: spotipy.Spotify
-    :type song_uris: list
+    :type song_uris: list[str]
     :type playlist_uri: str
     """
     # an error occurs when trying to add an emtpy list of songs to the playlist
-    if len(song_uris) > 1:
-        playlist_id = get_playlist_id_from_uri(playlist_uri)
+    # Spotify only allows the addition of max. 100 songs per request
+    playlist_id = get_playlist_id_from_uri(playlist_uri)
+    if 1 < len(song_uris) <= 100:
         sp.playlist_add_items(playlist_id, song_uris)
+
+    elif len(song_uris) > 100:
+        segment_list = _split_into_segments(song_uris)
+
+        # add the songs of each segment to the playlist
+        for segment in segment_list:
+            sp.playlist_add_items(playlist_id, segment)
 
 
 def remove_song_from_playlist(sp, playlist_uri, song_uri):
@@ -338,13 +347,21 @@ def remove_songs_from_playlist(sp, playlist_uri, song_uris):
     :param song_uris: the list of uris of the song that will be removed
     :param playlist_uri: the uri of the playlist that the songs will be removed from
     :type sp: spotipy.Spotify
-    :type song_uris: list
+    :type song_uris: list[str]
     :type playlist_uri: str
     """
-    # an error occurs when trying to remove an empty list of songs from the playlist
-    if len(song_uris) > 1:
-        playlist_id = get_playlist_id_from_uri(playlist_uri)
+    # an error occurs when trying to add an emtpy list of songs to the playlist
+    # Spotify only allows the removal of max. 100 songs per request
+    playlist_id = get_playlist_id_from_uri(playlist_uri)
+    if 1 < len(song_uris) <= 100:
         sp.playlist_remove_all_occurrences_of_items(playlist_id, song_uris)
+
+    elif len(song_uris) > 100:
+        segment_list = _split_into_segments(song_uris)
+
+        # add the songs of each sublist to the playlist
+        for segment in segment_list:
+            sp.playlist_remove_all_occurrences_of_items(playlist_id, segment)
 
 
 def remove_all_songs_from_playlist(sp, playlist_uri):
@@ -383,7 +400,7 @@ def remove_duplicate_songs_from_playlist(sp, playlist_uri):
     # important: j starts at i+1
     for i in range(0, len(song_uris)):
         duplicates_indices = []
-        for j in range(i+1, len(song_uris)):
+        for j in range(i + 1, len(song_uris)):
             # if a song occurs multiple times
             if song_uris[i] == song_uris[j]:
                 duplicates_indices.append(j)
@@ -398,3 +415,31 @@ def remove_duplicate_songs_from_playlist(sp, playlist_uri):
     # for performance reasons, do not send a request if there are no songs to be removed
     if len(items_to_remove) > 0:
         sp.playlist_remove_specific_occurrences_of_items(p_id, items_to_remove)
+
+
+def _split_into_segments(input_list):
+    """
+    Spotify allows only a fixed number (n) of tracks or URIs per request. (n=100 as of 23.02.2021) \n
+
+    Input a list that might be too long and it will be cut into segments that are small enough for Spotify to handle.
+
+    :param input_list: the list that will be cut into segments
+    :type input_list: list
+    :return: a list of lists, each element being a segment of the original list
+    """
+    max_n = 100  # as of 23.02.2021
+
+    # n cuts divide a list into n+1 segments (math.floor(len(song_uris) / 100) =: number_of_cuts)
+    n_of_segments = math.floor(len(input_list) / max_n) + 1
+    list_of_lists = []
+
+    # i element of interval [0, n_of_segments) => i always < n_of_segments
+    for i in range(n_of_segments):
+        if i < n_of_segments - 1:
+            list_of_lists.append(input_list[i * max_n: (i + 1) * max_n])
+
+        # the last segment can contain < max_n songs
+        else:
+            list_of_lists.append(input_list[i * max_n: (i * max_n) + len(input_list) % max_n])
+
+    return list_of_lists
