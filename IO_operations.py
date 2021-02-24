@@ -7,14 +7,89 @@ from os import listdir
 
 import URI_operations
 
-name_of_content_directory = "content_files"
+_NAME_OF_CONTENT_DIRECTORY = "content_files"
 
-# ------------------------------------------------ Regular Expression --------------------------------------------------
-# check valid line with a regular expression
-_NAME_RE = "[^#].*"  # ".*" is any number (including zero) of any characters (including whitespaces), "^#" matches any
-# character except "#"
-_URI_ARTIST_RE = "spotify:artist:\S*"  # \S matches any non-whitespace character
+# ------------------------------------------------ Regular Expressions ------------------------------------------------
+#
+#                   Visit https://regex101.com/ for a graphical explanation of what a given RE does
+#                                      (ensure to choose Python for RE semantic)
+#
+#
+# (?P<name><subRegex>) defines a subgroup or submatch. When the main regex has a match, the substring described by
+# subRegex can be easily extracted via its name using the RE's group-mechanic
+#   ATTENTION: For each match by its super-regex a subgroup can only extract one match. This means that if a group COULD
+# match multiple times, only the last match will be extractable, the previously matched will NOT be extractable
+#
+# (?:<subRegex>) is used to create groups that are NOT extractable, they have no name or ID. Mostly used when you would
+# normally use parenthesis (i.e. (<regex1>\s)* matches any string that matches <regex1> or \s any amount of times)
+#
+# ".*" is any amount (including zero) of any characters (including whitespace) that's not a new-line character
+#
+# [^#"] matches any character except "#";   c is String: [^c] matches any character that is not part of c
+#
+# \S matches any non-whitespace character;   \s matches any whitespace character
+#
+_NAME_RE = "[^\s#].*"
+_URI_ARTIST_RE = "spotify:artist:\S*"
 _URI_PLAYLIST_RE = "spotify:playlist:\S*"
+
+_SUBGROUP_GROUP_NAME = "(?P<GROUP_NAME>.*)"
+_SUBGROUP_TARGET = "## ADD_TO:{(?P<TARGET_PLAYLIST>" + _URI_PLAYLIST_RE + ")}"
+_SUBGROUP_PLAYLISTS = "## PLAYLISTS={(?P<PLAYLISTS>(?:\s*" + _NAME_RE + "=" + _URI_PLAYLIST_RE + ")*)\s*}"
+_SUBGROUP_ARTIST = "## ARTISTS={(?P<ARTISTS>(?:\s*" + _NAME_RE + "=" + _URI_ARTIST_RE + ")*)\s*}"
+
+# note: a group name is NOT restricted by the playlist and artist naming standards
+_GROUP_RE = "GROUP:" + _SUBGROUP_GROUP_NAME + "={\s*"\
+            + _SUBGROUP_TARGET + "\s*" + _SUBGROUP_PLAYLISTS + "\s*" + _SUBGROUP_ARTIST + "\s*}"
+
+_PLAYLIST_TUPLE_RE = _NAME_RE + "=" + _URI_PLAYLIST_RE
+_ARTIST_TUPLE_RE = _NAME_RE + "=" + _URI_ARTIST_RE
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def read_groups_from_file():
+    """
+    Reads all groups from the file and returns them in a list of directories: {group_ID: subgroups_dict}
+
+    where group_ID starts at 0 and subgroups_dict is a dictionary containing the group's metadata
+
+    :return: a list of dictionaries
+    :raise: IndexError when the group signature matches, but doesn't have the subgroups group_name, target_playlist,
+    playlists and artists.
+    """
+    # TODO: change the file path to the real playlist_and_artists.txt
+    # read input file
+    with open("playlists_and_artists - group testing.txt", "r") as file:
+        config_text = "".join(file.readlines())  # concatenates every line into a one single line
+
+    matches = re.finditer(_GROUP_RE, config_text)
+    match_list = {}
+
+    for matchNum, match in enumerate(matches, start=0):
+        group_dict = {}
+
+        # check for consistency
+        if len(match.groups()) != 4:
+            raise IndexError("A match must have 4 groups, otherwise it's an illegal match! \n"
+                             "\t The groups are: the group name, the target playlist, the playlists "
+                             "and the artists.")
+
+        # each match will have 4 groups: the group name, the target playlist,the playlists and the artists.
+        # group(0) is the complete match, but it's not counted by len(match.group())
+        #
+        # note: group(3) is the string containing all playlist tuples, but still contains white-space and new-line
+        # chars. We use another RE to extract only the tuples and put them into the dictionary. group(4) does the same
+        # but for the artist tuples
+        group_dict["group_name"] = match.group(1)
+        group_dict["target_playlist"] = match.group(2)
+        group_dict["playlists"] = [p_list.group(0) for p_list in (re.finditer(_PLAYLIST_TUPLE_RE, match.group(3)))]
+        group_dict["artists"] = [artist.group(0) for artist in (re.finditer(_ARTIST_TUPLE_RE, match.group(4)))]
+
+        match_list[matchNum] = group_dict
+
+    return match_list
 
 
 def safe_uri_content_to_hard_drive(sp, uri):
@@ -39,7 +114,7 @@ def safe_uri_content_to_hard_drive(sp, uri):
     main_dir_path = os.path.dirname(__file__)  # returns the directory of this file
 
     # navigate to the directory containing all content file directories
-    content_file_dir_path = os.path.join(main_dir_path, name_of_content_directory)
+    content_file_dir_path = os.path.join(main_dir_path, _NAME_OF_CONTENT_DIRECTORY)
 
     uri_directory_path = os.path.join(content_file_dir_path, uri_directory_name)
 
@@ -150,7 +225,7 @@ def read_playlist_and_artists_names_from_file():
     """
     Reads playlists and artists NAMES from file and return them as a list
 
-    :return: a list of containg the name of every artist and playlist listed in the file.
+    :return: a list of containing the name of every artist and playlist listed in the file.
     """
     names_list = []
 
@@ -186,7 +261,7 @@ def find_latest_content_file(uri):
 
     # directory structure:
     # main dir (containing all the .py files)
-    #   - content_files ( =name_of_content_directory )
+    #   - content_files ( =_NAME_OF_CONTENT_DIRECTORY )
     #       -spotify:playlist:<id>
     #           -spotify:playlist:<id>_content_raw_<date> (dictionary / json file)
     #           -spotify:playlist:<id>_content_raw_<date2> (dictionary / json file)
@@ -201,7 +276,7 @@ def find_latest_content_file(uri):
     main_dir_path = os.path.dirname(__file__)  # returns the directory of this file
 
     # navigate to the directory containing all content file directories
-    content_file_dir_path = os.path.join(main_dir_path, name_of_content_directory)
+    content_file_dir_path = os.path.join(main_dir_path, _NAME_OF_CONTENT_DIRECTORY)
 
     # list all files and directories of the content directory (NOT recursive)
     content_overview = listdir(content_file_dir_path)
@@ -214,7 +289,7 @@ def find_latest_content_file(uri):
             content_files.sort()
 
             # because of the date format yyyy.mm.dd the newest file will be at the end of the SORTED list
-            latest_content_file = content_files[len(content_files)-1]
+            latest_content_file = content_files[len(content_files) - 1]
 
             # ignore the file if it is from the current day. Otherwise the method works only once a day correctly
             # content files always end with a date at the end, i.e. spotify_playlist_<id>_content_raw(2021.01.14).json
@@ -227,8 +302,9 @@ def find_latest_content_file(uri):
 
             elif len(content_files) > 1:
                 # get the second most recent entry
-                return pathlib.Path(os.path.join(content_file_dir_path, directory, content_files[len(content_files)-2]))
-            
+                return pathlib.Path(
+                    os.path.join(content_file_dir_path, directory, content_files[len(content_files) - 2]))
+
             else:
                 # if there is only one content file and it's from today, act like there is no content file
                 return None
