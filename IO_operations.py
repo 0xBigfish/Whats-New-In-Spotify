@@ -18,7 +18,7 @@ class Group(object):
         5. the artists
     """
 
-    def __init__(self, group_id, group_name, target_playlist, playlists, artists):
+    def __init__(self, group_id, group_name, target_playlist, playlist_tuples, artist_tuples):
         """
         Creates a Group object
 
@@ -28,24 +28,26 @@ class Group(object):
         :type group_name: str
         :param target_playlist: the URI of the playlist where new songs from other playlists will be added to
         :type target_playlist: str
-        :param playlists: a list of playlist tuples (playlist_name, URI) that are observe by the group
-        :type playlists: list[tuple[string, string]]
-        :param artists: a list of artist tuples (artist_name, URI) that are observe by the group
-        :type artists: list[tuple[string, string]]
+        :param playlist_tuples: a list of playlist tuples (playlist_name, URI) that are observe by the group
+        :type playlist_tuples: list[tuple[string, string]]
+        :param artist_tuples: a list of artist tuples (artist_name, URI) that are observe by the group
+        :type artist_tuples: list[tuple[string, string]]
         """
         self.group_id = group_id
         self.group_name = group_name
         self.target_playlist = target_playlist
-        self.playlists = playlists
-        self.artists = artists
+        self.playlists = playlist_tuples
+        self.artists = artist_tuples
+
+    def get_group_id(self): return self.group_id
 
     def get_group_name(self): return self.group_name
 
     def get_target_playlist(self): return self.target_playlist
 
-    def get_playlists(self): return self.playlists
+    def get_playlist_tuples(self): return self.playlists
 
-    def get_artists(self): return self.artists
+    def get_artist_tuples(self): return self.artists
 
 
 # ------------------------------------------------ Regular Expressions ------------------------------------------------
@@ -131,10 +133,10 @@ def read_groups_from_file():
         group = Group(group_id=matchNum,
                       group_name=match.group(1),
                       target_playlist=match.group(2),
-                      playlists=[tuple(p_list.group(0).split("=")) for p_list in
-                                 (re.finditer(_PLAYLIST_TUPLE_RE, match.group(3)))],
-                      artists=[tuple(artist.group(0).split("=")) for artist in
-                               (re.finditer(_ARTIST_TUPLE_RE, match.group(4)))])
+                      playlist_tuples=[tuple(p_list.group(0).split("=")) for p_list in
+                                       (re.finditer(_PLAYLIST_TUPLE_RE, match.group(3)))],
+                      artist_tuples=[tuple(artist.group(0).split("=")) for artist in
+                                     (re.finditer(_ARTIST_TUPLE_RE, match.group(4)))])
 
         match_list.append(group)
 
