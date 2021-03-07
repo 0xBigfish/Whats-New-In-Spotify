@@ -70,7 +70,7 @@ class Group(object):
 #
 # \S matches any non-whitespace character;   \s matches any whitespace character
 #
-_NAME_RE = "[^\s#].*"
+_NAME_RE = "[^\s].*"
 _URI_ARTIST_RE = "spotify:artist:\S*"
 _URI_PLAYLIST_RE = "spotify:playlist:\S*"
 
@@ -97,12 +97,12 @@ def read_groups_from_file():
     Reads all groups from the file and returns them as a list of Group objects where group_ID starts at 0
 
     :return: a list of Group objects containing a groups metadata
-    :raise: IndexError when the group signature matches, but doesn't have the subgroups group_name, target_playlist,
-    playlists and artists.
+    :raise IndexError: when the group signature matches, but doesn't have the subgroups group_name, target_playlist,
+            playlists and artists.
     """
     # TODO: change the file path to the real playlist_and_artists.txt
     # read input file
-    with open("playlists_and_artists - group testing.txt", "r") as file:
+    with open("playlists_and_artists_groups.txt", "r") as file:
         config_text = "".join(file.readlines())  # concatenates every line into a one single line
 
     matches = re.finditer(_GROUP_RE, config_text)
@@ -183,6 +183,9 @@ def safe_uri_content_to_hard_drive(sp, uri):
 
 def read_playlists_and_artists_uris_from_file():
     """
+    OBSOLETE METHOD
+
+
     Reads playlists and artists URIs from file and return them as a list of tuples: (<name>, <URI>)
 
     :return: a list of (name, URI) tuples
@@ -214,6 +217,9 @@ def read_playlists_and_artists_uris_from_file():
 
 def read_playlists_uris_from_file():
     """
+    OBSOLETE METHOD
+
+
     Reads playlists URIs from file and return them as a list of tuples: (<name>, <URI>)
 
     :return: a list of (name, URI) tuples
@@ -244,6 +250,9 @@ def read_playlists_uris_from_file():
 
 def read_artists_uris_from_file():
     """
+    OBSOLETE METHOD
+
+
     Reads artists URIs from file and return them as a list of tuples: (<name>, <URI>)
 
     :return: a list of (name, URI) tuples
@@ -274,6 +283,8 @@ def read_artists_uris_from_file():
 
 def read_playlist_and_artists_names_from_file():
     """
+    OBSOLETE METHOD
+
     Reads playlists and artists NAMES from file and return them as a list
 
     :return: a list of containing the name of every artist and playlist listed in the file.

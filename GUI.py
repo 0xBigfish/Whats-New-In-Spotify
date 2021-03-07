@@ -4,6 +4,7 @@ import PySimpleGUI as sg
 
 import IO_operations
 
+
 #########################################################################################
 #                                                                                       #
 #       Documentation of PySimpleGUI at https://pysimplegui.readthedocs.io              #
@@ -126,13 +127,14 @@ while True:
         # the loop will always find the correct corresponding element
         for i in range(len(group_names)):
             if groups[i].get_group_id() == get_group_id_from_name(values["-ComboBox-"]):
-                playlist_name_and_uris = groups[i].get_playlist_tuples()
+                rem_win_playlist_names_and_uris = groups[i].get_playlist_tuples()
+                rem_win_artist_names_and_uris = groups[i].get_artist_tuples()
+                break
 
         # TODO: the value is unassigned, there probably is an error in the get_group_id_from_name method
-        playlist_names_only = [playlist_tuple[0] for playlist_tuple in playlist_name_and_uris]
+        playlist_names_only = [playlist_tuple[0] for playlist_tuple in rem_win_playlist_names_and_uris]
 
-        artist_name_and_uris = IO_operations.read_artists_uris_from_file()
-        artist_names_only = [artist_tuple[0] for artist_tuple in artist_name_and_uris]
+        artist_names_only = [artist_tuple[0] for artist_tuple in rem_win_artist_names_and_uris]
 
         # layout of the window that opens when the "Remove" button is pressed
         # the columns contain listboxs, where the user can select multiple entries which will then be removed from the
