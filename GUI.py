@@ -11,8 +11,30 @@ import IO_operations
 #                                                                                       #
 #########################################################################################
 
-playlist_tuples = IO_operations.read_playlists_uris_from_file()
-artist_tuples = IO_operations.read_artists_uris_from_file()
+# Notes:
+#
+#       PySimpleGUI enforces that each layout may only be used ONCE, so if a layout has been used in an element,
+# it can not be used in another window or other element again. Fix: just assign the same values to new
+# variables / layouts
+
+
+def get_group_id_from_name(group_name):
+    """
+    Extract the id from the constructed group_name.
+
+
+    Group names are constructed like this:
+        ``[str(group.get_group_id()) + ": " + group.get_group_name() for group in groups]``
+    """
+    # group name is of format <id>: <group_name>
+    return group_name.split(":")[0]
+
+
+groups = IO_operations.read_groups_from_file()
+initial_group_id = 0
+
+playlist_tuples = groups[initial_group_id].get_playlist_tuples()
+artist_tuples = groups[initial_group_id].get_artist_tuples()
 
 playlist_names = [sg.Text(playlist_tuple[0]) for playlist_tuple in playlist_tuples]
 playlist_names_and_uris = [sg.Text(playlist_tuple) for playlist_tuple in playlist_tuples]
@@ -21,6 +43,9 @@ artist_names_and_uris = [sg.Text(artist_tuple) for artist_tuple in artist_tuples
 
 playlist_layout = [[name] for name in playlist_names]
 artist_layout = [[name] for name in artist_names]
+
+# include the group Id in the name, to have a bijective mapping from group_name to group id
+group_names = [str(group.get_group_id()) + ": " + group.get_group_name() for group in groups]
 
 # Define the window's contents
 # the windows is divided into a grid. "layout" is a list of list, representing columns and rows
@@ -51,7 +76,9 @@ buttons_layout = [
 
 
 main_window_layout = \
-    [[sg.Text("Release Radar", font="default 14 bold"), sg.Button("Settings", size=(15, 1),)],
+    [[sg.Combo(values=group_names, default_value=group_names[initial_group_id], font="default 16 bold", readonly=True,
+               background_color=sg.theme_background_color(), text_color=sg.theme_text_color(), key="-ComboBox-"),
+      sg.Button("Settings", size=(15, 1))],
      [sg.Checkbox("Show Spotify URIs")],
      [sg.Text("", size=(10, 1))],  # blank line
      [sg.Column(layout=release_radar_layout_frames), sg.Column(layout=buttons_layout, vertical_alignment="top")],
@@ -95,10 +122,13 @@ while True:
     if event == "-RemoveButton-":
         window.disable()  # freeze the main window until the user has made their input
 
-        # both playlist and artist layouts have already been used in the main window. PySimpleGUI enforces that each
-        # layout may only be used ONCE. Just assign the same values to new variables / layouts here.
-        # They also need a different format as their values will be fed into the Listbox
-        playlist_name_and_uris = IO_operations.read_playlists_uris_from_file()
+        # find the id of the currently selected group and read the group's meta data
+        # the loop will always find the correct corresponding element
+        for i in range(len(group_names)):
+            if groups[i].get_group_id() == get_group_id_from_name(values["-ComboBox-"]):
+                playlist_name_and_uris = groups[i].get_playlist_tuples()
+
+        # TODO: the value is unassigned, there probably is an error in the get_group_id_from_name method
         playlist_names_only = [playlist_tuple[0] for playlist_tuple in playlist_name_and_uris]
 
         artist_name_and_uris = IO_operations.read_artists_uris_from_file()
@@ -137,6 +167,8 @@ while True:
         window.enable()
         window_remove.close()
         window.force_focus()
+
+    # when "Change Group" button is pressed, open
 
 # Finish up by removing from the screen
 window.close()
