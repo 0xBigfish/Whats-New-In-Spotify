@@ -9,7 +9,6 @@ from IO_operations import safe_uri_content_to_hard_drive
 from URI_operations import get_playlist_id_from_uri
 
 REDIRECT_URI = "https://www.duckduckgo.com"
-RELEASE_RADAR = "spotify:playlist:7I0dtpfqqtcPYNsaJn32dF"
 
 # Check if any of the flags have been set
 flag_save_content_to_file = False
@@ -26,12 +25,14 @@ if len(sys.argv) > 1:
 
 # TODO: currently only the first group can be read with this script
 group = read_groups_from_file()[0]
+RELEASE_RADAR = group.get_target_playlist()
 
 if flag_authorization_code_flow:
     scope = "playlist-modify-private, user-follow-modify"  # to add more just add them separated by a comma
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope, redirect_uri=REDIRECT_URI))
 
     new_tracks = []
+    no_duplicates = []
     for playlist_data in group.get_playlist_tuples():
         name = playlist_data[0]
         uri = playlist_data[1]

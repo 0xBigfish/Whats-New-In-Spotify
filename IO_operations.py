@@ -96,40 +96,34 @@ def read_groups_from_file():
     """
     Reads all groups from the file and returns them as a list of Group objects where group_ID starts at 0
 
-    :return: a list of Group objects containing a groups metadata
+    :return: a list of Group objects each containing a group's metadata
     :raise IndexError: when the group signature matches, but doesn't have the subgroups group_name, target_playlist,
             playlists and artists.
     """
     # TODO: change the file path to the real playlist_and_artists.txt
     # read input file
-    with open("playlists_and_artists_groups.txt", "r") as file:
+    with open("playlists_and_artists.txt", "r") as file:
         config_text = "".join(file.readlines())  # concatenates every line into a one single line
 
     matches = re.finditer(_GROUP_RE, config_text)
     match_list = []
 
     for matchNum, match in enumerate(matches, start=0):
-        group_dict = {}
 
         # check for consistency
+        # each match will have 4 groups: the group name, the target playlist,the playlists and the artists.
+        # group(0) is the complete match, but it's not counted by len(match.group())
         if len(match.groups()) != 4:
             raise IndexError("A match must have 4 groups, otherwise it's an illegal match! \n"
                              "\t The groups are: the group name, the target playlist, the playlists "
                              "and the artists.")
 
-        #        group_dict["group_name"] = match.group(1)
-        #        group_dict["target_playlist"] = match.group(2)
-        #        group_dict["playlists"] = [p_list.group(0) for p_list in (re.finditer(_PLAYLIST_TUPLE_RE, match.group(3)))]
-        #        group_dict["artists"] = [artist.group(0) for artist in (re.finditer(_ARTIST_TUPLE_RE, match.group(4)))]
-        # each match will have 4 groups: the group name, the target playlist,the playlists and the artists.
-
-        # group(0) is the complete match, but it's not counted by len(match.group())
-        #
         # note: group(3) is the string containing all playlist tuples, but still contains white-space and new-line
         # chars. We use another RE to extract only the tuples (still as strings) and put them into the dictionary.
-        # group(4) does the same but for the artist tuples.
+        # group(4) is the same but for the artist tuples.
+        # group(0) is the complete match as a string
         #
-        # we need the tuple stings to be separated into (name, URI), .split() returns a list that we cast into a tuple
+        # we need the tuple stings to be separated into (name, URI); .split() returns a list that we cast into a tuple
         group = Group(group_id=matchNum,
                       group_name=match.group(1),
                       target_playlist=match.group(2),
