@@ -16,79 +16,119 @@ import IO_operations
 #
 #       PySimpleGUI enforces that each layout may only be used ONCE, so if a layout has been used in an element,
 # it can not be used in another window or other element again. Fix: just assign the same values to new
-# variables / layouts
+# variables / layouts or use methods to generate the layouts
 
 
 def get_group_id_from_name(group_name):
     """
     Extract the id from the constructed group_name.
 
-
     Group names are constructed like this:
         ``[str(group.get_group_id()) + ": " + group.get_group_name() for group in groups]``
     """
-    # group name is of format <id>: <group_name>
-    return group_name.split(":")[0]
+    # group name is of format <id>: <group_name>    (there is a space after the ":")
+    return int(group_name.split(":")[0])
+
+
+def generate_group_content_layout(group_id):
+    """
+    Generate the layout for the playlist and artist part section
+
+    :param group_id: id of the group whose content will be displayed
+    :type group_id: int
+    :return: the generated layout
+    """
+    playlist_tuples = groups[group_id].get_playlist_tuples()
+    artist_tuples = groups[group_id].get_artist_tuples()
+    playlist_names = [sg.Text(playlist_tuple[0]) for playlist_tuple in playlist_tuples]
+    artist_names = [sg.Text(artist_tuple[0]) for artist_tuple in artist_tuples]
+
+    playlist_names_and_uris = \
+        [sg.Text(playlist_tuple[0] + "  ** URI: " + playlist_tuple[1]) for playlist_tuple in playlist_tuples]
+    artist_names_and_uris = \
+        [sg.Text(artist_tuple[0] + "  ** URI: " + artist_tuple[1]) for artist_tuple in artist_tuples]
+
+    if uri_checkbox_value:
+        playlist_layout = [[name] for name in playlist_names_and_uris]
+        artist_layout = [[name] for name in artist_names_and_uris]
+    else:
+        playlist_layout = [[name] for name in playlist_names]
+        artist_layout = [[name] for name in artist_names]
+
+    if use_frames_in_layout:
+        generated_group_content_layout = [
+            [sg.Frame("Playlists", key="-PlaylistsFrame-", layout=[
+                [sg.Column(scrollable=True, layout=playlist_layout, size=(350, 250))]], font="default 12 bold")],
+            [sg.Frame("Artists", key="-ArtistsFrame-", layout=[
+                [sg.Column(scrollable=True, layout=artist_layout, size=(350, 250))]], font="default 12 bold")],
+        ]
+    else:
+        generated_group_content_layout = [
+            [sg.Text("Playlist")],
+            [sg.Column(scrollable=True, layout=playlist_layout, size=(250, 250))],
+            [sg.Text("Artists")],
+            [sg.Column(scrollable=True, layout=artist_layout, size=(250, 250))]
+        ]
+
+    return generated_group_content_layout
+
+
+def generate_button_column_layout():
+    """
+    Generate the layout for the button column
+
+    :return: the generated button layout
+    """
+    generated_buttons_layout = [
+        [sg.Button("Run", size=(15, 1), key="-RunButton-")],
+        [sg.Button("New Group", size=(15, 1), key="-NewGroupButton-")],
+        [sg.Button("Add", size=(15, 1), key="-AddButton-")],
+        [sg.Button("Remove", size=(15, 1), key="-RemoveButton-")],
+        [sg.Button("Bonus Features", size=(15, 1), key="-BonusFeaturesButton-")]
+    ]
+
+    return generated_buttons_layout
+
+
+# the state of some elements is saved by the values. They are global, are read by the generator methods and are
+# overwritten in the event loop based on the user's input
+# for example: whether a checkbox is ticked
+# state values
+uri_checkbox_value = False
+use_frames_in_layout = True
+current_group_id = 0
 
 
 groups = IO_operations.read_groups_from_file()
-initial_group_id = 0
-
-playlist_tuples = groups[initial_group_id].get_playlist_tuples()
-artist_tuples = groups[initial_group_id].get_artist_tuples()
-
-playlist_names = [sg.Text(playlist_tuple[0]) for playlist_tuple in playlist_tuples]
-playlist_names_and_uris = [sg.Text(playlist_tuple) for playlist_tuple in playlist_tuples]
-artist_names = [sg.Text(artist_tuple[0]) for artist_tuple in artist_tuples]
-artist_names_and_uris = [sg.Text(artist_tuple) for artist_tuple in artist_tuples]
-
-playlist_layout = [[name] for name in playlist_names]
-artist_layout = [[name] for name in artist_names]
 
 # include the group Id in the name, to have a bijective mapping from group_name to group id
 group_names = [str(group.get_group_id()) + ": " + group.get_group_name() for group in groups]
 
 # Define the window's contents
-# the windows is divided into a grid. "layout" is a list of list, representing columns and rows
-# currently there are two layout themes:
-release_radar_layout_frames = [
-    [sg.Frame("Playlists", layout=[
-#        [sg.Listbox(values=playlist_layout, size=(50, 10), select_mode=sg.LISTBOX_SELECT_MODE_EXTENDED)]], font="default 12 bold")],
-        [sg.Column(scrollable=True, layout=playlist_layout, size=(350, 250))]], font="default 12 bold")],
-    [sg.Frame("Artists", layout=[
-        [sg.Column(scrollable=True, layout=artist_layout, size=(350, 250))]], font="default 12 bold")],
-]
-# if this is not commented an error is thrown: "YOU ARE ATTEMPTING TO REUSE AN ELEMENT IN YOUR LAYOUT!"
-# release_radar_layout_no_frames = [
-#    [sg.Text("Playlist")],
-#    [sg.Column(scrollable=True, layout=playlist_layout, size=(250, 250))],
-#    [sg.Text("Artists")],
-#    [sg.Column(scrollable=True, layout=artist_layout, size=(250, 250))]
-# ]
+# the windows is divided into a grid. A layout is a list of list, representing columns and rows
+group_content_layout = generate_group_content_layout(current_group_id)
+buttons_layout = generate_button_column_layout()
 
 
-buttons_layout = [
-    [sg.Button("Run", size=(15, 1), key="-RunButton-")],
-    [sg.Button("New Group", size=(15, 1), key="-NewGroupButton-")],
-    [sg.Button("Add", size=(15, 1), key="-AddButton-")],
-    [sg.Button("Remove", size=(15, 1), key="-RemoveButton-")],
-    [sg.Button("Bonus Features", size=(15, 1), key="-BonusFeaturesButton-")]
-]
+def generate_main_window_layout():
+    generated_main_window_layout = [
+        [sg.Combo(values=group_names, default_value=group_names[current_group_id], font="default 16 bold",
+                  readonly=True,
+                  background_color=sg.theme_background_color(), text_color=sg.theme_text_color(), key="-ComboBox-",
+                  enable_events=True),
+         sg.Button("Settings", size=(15, 1))],
+        [sg.Checkbox("Show Spotify URIs", enable_events=True, key="-URICheckbox-", default=uri_checkbox_value)],
+        [sg.Text("", size=(10, 1))],  # blank line
+        [sg.Column(layout=group_content_layout), sg.Column(layout=buttons_layout, vertical_alignment="top")],
+        [sg.Button('Ok'), sg.Button('Quit')]]
+
+    return generated_main_window_layout
 
 
-main_window_layout = \
-    [[sg.Combo(values=group_names, default_value=group_names[initial_group_id], font="default 16 bold", readonly=True,
-               background_color=sg.theme_background_color(), text_color=sg.theme_text_color(), key="-ComboBox-"),
-      sg.Button("Settings", size=(15, 1))],
-     [sg.Checkbox("Show Spotify URIs")],
-     [sg.Text("", size=(10, 1))],  # blank line
-     [sg.Column(layout=release_radar_layout_frames), sg.Column(layout=buttons_layout, vertical_alignment="top")],
-     [sg.Button('Ok'), sg.Button('Quit')]]
-
+main_window_layout = generate_main_window_layout()
 
 # Create the window
 window = sg.Window("What\'s new in Spotify", main_window_layout)
-
 
 # Display and interact with the Window using an Event Loop
 while True:
@@ -156,7 +196,7 @@ while True:
             [sg.Column(vertical_scroll_only=True, layout=column1),
              sg.Column(vertical_scroll_only=True, layout=column2)],
             [sg.Button("Remove Selected", size=(30, 2)), sg.Button("Go Back", size=(30, 2))]
-            ]
+        ]
 
         window_remove = sg.Window("What\'s new in Spotify", layout_remove_window)
 
@@ -170,7 +210,25 @@ while True:
         window_remove.close()
         window.force_focus()
 
-    # when "Change Group" button is pressed, open
+    # when "Change Group" button is pressed, update the whole window.
+    # actually only the group specific information has to be updated, but the whole needs to be reloaded to show
+    # these changes, as PySimpleGUI can't update the content of the playlist and artist columns / frame without
+    # creating a new layout for them.
+    if event == "-ComboBox-":
+        current_group_id = get_group_id_from_name(values["-ComboBox-"])
+        group_content_layout = generate_group_content_layout(current_group_id)
+        buttons_layout = generate_button_column_layout()
+        window = sg.Window("What\'s new in Spotify", generate_main_window_layout())
+        print("updated")
+
+    # when the URI checkbox is clicked, update the whole window
+    # (for the same reason as described above the "-ComboBox-" event)
+    if event == "-URICheckbox-":
+        uri_checkbox_value = values["-URICheckbox-"]
+        group_content_layout = generate_group_content_layout(current_group_id)
+        buttons_layout = generate_button_column_layout()
+        window = sg.Window("What\'s new in Spotify", generate_main_window_layout())
+        print("updated")
 
 # Finish up by removing from the screen
 window.close()
