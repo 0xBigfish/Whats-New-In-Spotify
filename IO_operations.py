@@ -7,7 +7,48 @@ from os import listdir
 
 import URI_operations
 
-_NAME_OF_CONTENT_DIRECTORY = "content_files"
+
+class Group(object):
+    """
+    A group object holds information about a group specified in the playlist_and_artists.txt file:
+        1. the group id
+        2. the group name
+        3. the target playlist
+        4. the playlist
+        5. the artists
+    """
+
+    def __init__(self, group_id, group_name, target_playlist, playlist_tuples, artist_tuples):
+        """
+        Creates a Group object
+
+        :param group_id: the id of the group ( in order of appearance in the .txt file, starting at 0 )
+        :type group_id: int
+        :param group_name: the name of the group
+        :type group_name: str
+        :param target_playlist: the URI of the playlist where new songs from other playlists will be added to
+        :type target_playlist: str
+        :param playlist_tuples: a list of playlist tuples (playlist_name, URI) that are observe by the group
+        :type playlist_tuples: list[tuple[string, string]]
+        :param artist_tuples: a list of artist tuples (artist_name, URI) that are observe by the group
+        :type artist_tuples: list[tuple[string, string]]
+        """
+        self.group_id = group_id
+        self.group_name = group_name
+        self.target_playlist = target_playlist
+        self.playlists = playlist_tuples
+        self.artists = artist_tuples
+
+    def get_group_id(self): return self.group_id
+
+    def get_group_name(self): return self.group_name
+
+    def get_target_playlist(self): return self.target_playlist
+
+    def get_playlist_tuples(self): return self.playlists
+
+    def get_artist_tuples(self): return self.artists
+
 
 # ------------------------------------------------ Regular Expressions ------------------------------------------------
 #
@@ -29,7 +70,7 @@ _NAME_OF_CONTENT_DIRECTORY = "content_files"
 #
 # \S matches any non-whitespace character;   \s matches any whitespace character
 #
-_NAME_RE = "[^\s#].*"
+_NAME_RE = "[^\s].*"
 _URI_ARTIST_RE = "spotify:artist:\S*"
 _URI_PLAYLIST_RE = "spotify:playlist:\S*"
 
@@ -39,55 +80,59 @@ _SUBGROUP_PLAYLISTS = "## PLAYLISTS={(?P<PLAYLISTS>(?:\s*" + _NAME_RE + "=" + _U
 _SUBGROUP_ARTIST = "## ARTISTS={(?P<ARTISTS>(?:\s*" + _NAME_RE + "=" + _URI_ARTIST_RE + ")*)\s*}"
 
 # note: a group name is NOT restricted by the playlist and artist naming standards
-_GROUP_RE = "GROUP:" + _SUBGROUP_GROUP_NAME + "={\s*"\
+_GROUP_RE = "GROUP:" + _SUBGROUP_GROUP_NAME + "={\s*" \
             + _SUBGROUP_TARGET + "\s*" + _SUBGROUP_PLAYLISTS + "\s*" + _SUBGROUP_ARTIST + "\s*}"
 
 _PLAYLIST_TUPLE_RE = _NAME_RE + "=" + _URI_PLAYLIST_RE
 _ARTIST_TUPLE_RE = _NAME_RE + "=" + _URI_ARTIST_RE
 
-
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+_NAME_OF_CONTENT_DIRECTORY = "content_files"
 
 
 def read_groups_from_file():
     """
-    Reads all groups from the file and returns them in a list of directories: {group_ID: subgroups_dict}
+    Reads all groups from the file and returns them as a list of Group objects where group_ID starts at 0
 
-    where group_ID starts at 0 and subgroups_dict is a dictionary containing the group's metadata
-
-    :return: a list of dictionaries
-    :raise: IndexError when the group signature matches, but doesn't have the subgroups group_name, target_playlist,
-    playlists and artists.
+    :return: a list of Group objects each containing a group's metadata
+    :raise IndexError: when the group signature matches, but doesn't have the subgroups group_name, target_playlist,
+            playlists and artists.
     """
     # TODO: change the file path to the real playlist_and_artists.txt
     # read input file
-    with open("playlists_and_artists - group testing.txt", "r") as file:
+    with open("playlists_and_artists.txt", "r") as file:
         config_text = "".join(file.readlines())  # concatenates every line into a one single line
 
     matches = re.finditer(_GROUP_RE, config_text)
-    match_list = {}
+    match_list = []
 
     for matchNum, match in enumerate(matches, start=0):
-        group_dict = {}
 
         # check for consistency
+        # each match will have 4 groups: the group name, the target playlist,the playlists and the artists.
+        # group(0) is the complete match, but it's not counted by len(match.group())
         if len(match.groups()) != 4:
             raise IndexError("A match must have 4 groups, otherwise it's an illegal match! \n"
                              "\t The groups are: the group name, the target playlist, the playlists "
                              "and the artists.")
 
-        # each match will have 4 groups: the group name, the target playlist,the playlists and the artists.
-        # group(0) is the complete match, but it's not counted by len(match.group())
-        #
         # note: group(3) is the string containing all playlist tuples, but still contains white-space and new-line
-        # chars. We use another RE to extract only the tuples and put them into the dictionary. group(4) does the same
-        # but for the artist tuples
-        group_dict["group_name"] = match.group(1)
-        group_dict["target_playlist"] = match.group(2)
-        group_dict["playlists"] = [p_list.group(0) for p_list in (re.finditer(_PLAYLIST_TUPLE_RE, match.group(3)))]
-        group_dict["artists"] = [artist.group(0) for artist in (re.finditer(_ARTIST_TUPLE_RE, match.group(4)))]
+        # chars. We use another RE to extract only the tuples (still as strings) and put them into the dictionary.
+        # group(4) is the same but for the artist tuples.
+        # group(0) is the complete match as a string
+        #
+        # we need the tuple stings to be separated into (name, URI); .split() returns a list that we cast into a tuple
+        group = Group(group_id=matchNum,
+                      group_name=match.group(1),
+                      target_playlist=match.group(2),
+                      playlist_tuples=[tuple(p_list.group(0).split("=")) for p_list in
+                                       (re.finditer(_PLAYLIST_TUPLE_RE, match.group(3)))],
+                      artist_tuples=[tuple(artist.group(0).split("=")) for artist in
+                                     (re.finditer(_ARTIST_TUPLE_RE, match.group(4)))])
 
-        match_list[matchNum] = group_dict
+        match_list.append(group)
 
     return match_list
 
@@ -132,6 +177,9 @@ def safe_uri_content_to_hard_drive(sp, uri):
 
 def read_playlists_and_artists_uris_from_file():
     """
+    OBSOLETE METHOD
+
+
     Reads playlists and artists URIs from file and return them as a list of tuples: (<name>, <URI>)
 
     :return: a list of (name, URI) tuples
@@ -163,6 +211,9 @@ def read_playlists_and_artists_uris_from_file():
 
 def read_playlists_uris_from_file():
     """
+    OBSOLETE METHOD
+
+
     Reads playlists URIs from file and return them as a list of tuples: (<name>, <URI>)
 
     :return: a list of (name, URI) tuples
@@ -193,6 +244,9 @@ def read_playlists_uris_from_file():
 
 def read_artists_uris_from_file():
     """
+    OBSOLETE METHOD
+
+
     Reads artists URIs from file and return them as a list of tuples: (<name>, <URI>)
 
     :return: a list of (name, URI) tuples
@@ -223,6 +277,8 @@ def read_artists_uris_from_file():
 
 def read_playlist_and_artists_names_from_file():
     """
+    OBSOLETE METHOD
+
     Reads playlists and artists NAMES from file and return them as a list
 
     :return: a list of containing the name of every artist and playlist listed in the file.

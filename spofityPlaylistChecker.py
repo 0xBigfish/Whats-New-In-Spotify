@@ -4,12 +4,11 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
 
 import Playlist_operations
-from IO_operations import read_playlists_uris_from_file
+from IO_operations import read_groups_from_file
 from IO_operations import safe_uri_content_to_hard_drive
 from URI_operations import get_playlist_id_from_uri
 
 REDIRECT_URI = "https://www.duckduckgo.com"
-RELEASE_RADAR = "spotify:playlist:7I0dtpfqqtcPYNsaJn32dF"
 
 # Check if any of the flags have been set
 flag_save_content_to_file = False
@@ -24,13 +23,17 @@ if len(sys.argv) > 1:
             flag_authorization_code_flow = True
 
 
+# TODO: currently only the first group can be read with this script
+group = read_groups_from_file()[0]
+RELEASE_RADAR = group.get_target_playlist()
+
 if flag_authorization_code_flow:
     scope = "playlist-modify-private, user-follow-modify"  # to add more just add them separated by a comma
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope, redirect_uri=REDIRECT_URI))
 
-    playlist_list = read_playlists_uris_from_file()
     new_tracks = []
-    for playlist_data in playlist_list:
+    no_duplicates = []
+    for playlist_data in group.get_playlist_tuples():
         name = playlist_data[0]
         uri = playlist_data[1]
 
@@ -51,10 +54,8 @@ if flag_authorization_code_flow:
 else:
     sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())
 
-    playlist_list = read_playlists_uris_from_file()
-
     # playlist_data is a tuple (name, URI)
-    for playlist_data in playlist_list:
+    for playlist_data in group.get_playlist_tuples():
         name = playlist_data[0]
         uri = playlist_data[1]
         playlist_id = get_playlist_id_from_uri(uri)

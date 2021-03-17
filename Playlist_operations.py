@@ -7,8 +7,6 @@ from IO_operations import find_latest_content_file
 from IO_operations import safe_uri_content_to_hard_drive
 from URI_operations import *
 
-RELEASE_RADAR = "spotify:playlist:7I0dtpfqqtcPYNsaJn32dF"
-
 
 def print_playlist_changes(sp, p_uri):
     """
@@ -56,7 +54,7 @@ def print_playlist_changes(sp, p_uri):
     #               track : true
     #               track_number : 1
     #               type : track
-    #               uri : spotify:track:sjfldlksjl
+    #               uri : spotify:track:<id>
     #           video_thumbnail {1} :
     #       1 {6}:
     #           .....
@@ -198,7 +196,7 @@ def get_all_songs_from_playlist(sp, p_uri):
     #               track : true
     #               track_number : 1
     #               type : track
-    #               uri : spotify:track:sjfldlksjl
+    #               uri : spotify:track:<id>
     #           video_thumbnail {1} :
     #       1 {6}:
     #           .....
@@ -219,7 +217,7 @@ def get_all_songs_from_playlist(sp, p_uri):
 
 def get_new_songs_in_playlist(sp, p_uri):
     """
-    songs that have newly been added to this playlist will be added to the release radar.
+    songs that have newly been added to this playlist will be returned as a list of song URIs
 
     if no content file is found for the playlist, a new content file is created.
 
@@ -429,11 +427,11 @@ def _split_into_segments(input_list):
     """
     max_n = 100  # as of 23.02.2021
 
-    # n cuts divide a list into n+1 segments (math.floor(len(song_uris) / 100) =: number_of_cuts)
+    # n cuts divide a list into n+1 segments (math.floor(len(song_uris) / max_n) =: number_of_cuts)
     n_of_segments = math.floor(len(input_list) / max_n) + 1
     list_of_lists = []
 
-    # i element of interval [0, n_of_segments) => i always < n_of_segments
+    # i is element of interval [0, n_of_segments) => i always < n_of_segments
     for i in range(n_of_segments):
         if i < n_of_segments - 1:
             list_of_lists.append(input_list[i * max_n: (i + 1) * max_n])
