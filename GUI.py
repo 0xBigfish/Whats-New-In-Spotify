@@ -1,8 +1,11 @@
 # sg is the default PySimpleGUI naming convention for the import
 # noinspection PyPep8Naming
 import PySimpleGUI as sg
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
 
 import IO_operations
+from Playlist_operations import get_new_songs_in_playlist
 
 
 #########################################################################################
@@ -90,6 +93,15 @@ def generate_button_column_layout():
     return generated_buttons_layout
 
 
+#########################################################################################
+#                                                                                       #
+#                              Open connection to Spotify                               #
+#                                                                                       #
+sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())                           #
+#                                                                                       #
+#########################################################################################
+
+
 # the state of some elements is saved by the values. They are global, are read by the generator methods and are
 # overwritten in the event loop based on the user's input
 # for example: whether a checkbox is ticked
@@ -97,7 +109,6 @@ def generate_button_column_layout():
 uri_checkbox_value = False
 use_frames_in_layout = True
 current_group_id = 0
-
 
 groups = IO_operations.read_groups_from_file()
 
@@ -136,6 +147,56 @@ while True:
     # See if user wants to quit or window was closed
     if event == sg.WINDOW_CLOSED or event == 'Quit':
         break
+
+    # when "Run" button is pressed, open an input window
+    if event == "-RunButton-":
+        window.disable()  # freeze the main window until the user has made their input
+
+        # layout of the window that opens when the "Add" button is pressed
+        layout_run_window = [
+            [sg.Checkbox("Safe playlist content to hard drive")],
+            [sg.Checkbox("Add new songs to your playlist")],
+            [sg.Button("Run", key="-RunButtonRunWindow-")]
+        ]
+        window_run = sg.Window("What\'s new in Spotify", layout_run_window)
+
+        event_run, values_run = window_run.read()
+        while True:
+            if event_run == "-RunButtonRunWindow-":
+                for playlist_tuple in groups[current_group_id].get_playlist_tuples():
+
+                    #TODO: get_new_songs gibt keine neuen songs zurück, da mit der content File von Freitag verglichen wird, und seit dem sind noch keine neuen songs hinzugekommen
+                    #TODO: add eine Funktion ein custom date anzugeben, ab dem neue Songs gesucht werden sollen
+                    layout_presentation_window = [
+                        [sg.Text("New Songs in " + playlist_tuple[0], size=(50, 20),
+                                 font="default 16 bold")],
+                        [sg.Text(song) for song in get_new_songs_in_playlist(sp, playlist_tuple[1])],
+                        [sg.Button("Next")]
+                    ]
+                    window_presentation = sg.Window("jakf", layout_presentation_window)
+                    event_presentation, values_presentation = window_presentation.read()
+
+                    # the quit_flag is set if the user presses the "X" button instead of "Next"
+                    # the GUI will close all windows and return to the main menu
+                    quit_flag = False
+                    while True:
+                        if event_presentation == "Next":
+                            window_presentation.close()
+                            break
+                        if event_presentation == sg.WINDOW_CLOSED:
+                            quit_flag = True
+                            break
+
+                    if quit_flag:
+                        break
+                break
+
+            if event_run == sg.WINDOW_CLOSED:
+                break
+
+        window.enable()
+        window_run.close()
+        window.force_focus()
 
     # when "Add" button is pressed, open an input window
     if event == "-AddButton-":
