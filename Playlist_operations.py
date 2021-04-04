@@ -1,5 +1,6 @@
 import json
 import math
+from datetime import date
 
 import spotipy
 
@@ -209,7 +210,7 @@ def get_all_songs_from_playlist(sp, p_uri):
     return [new_track["track"]["uri"] for new_track in latest_tracks]
 
 
-def get_new_songs_in_playlist(sp, p_uri):
+def get_new_songs_in_playlist(sp, p_uri, since_date=None):
     """
     songs that have newly been added to this playlist will be returned as a list of song URIs
 
@@ -217,12 +218,17 @@ def get_new_songs_in_playlist(sp, p_uri):
 
     :param p_uri: the spotify uri of the playlist
     :param sp: the Spotify API client
+    :param since_date: a date
     :type p_uri: str
     :type sp: spotipy.Spotify
-    :return a list containing all new songs in the playlist
+    :type since_date: date
+    :return: a list containing all new songs in the playlist
     """
     # read old playlist content from file
-    latest_content_file = find_latest_content_file(p_uri)
+    if since_date is None:
+        latest_content_file = find_latest_content_file(p_uri)
+    else:
+        latest_content_file = find_latest_content_file(p_uri, since_date)
 
     # if a content file exists for the uri:
     if latest_content_file:

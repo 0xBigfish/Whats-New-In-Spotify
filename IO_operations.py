@@ -2,6 +2,7 @@ import json
 import os.path
 import pathlib
 import re
+from bisect import bisect_left
 from datetime import date
 from os import listdir
 
@@ -100,7 +101,6 @@ def read_groups_from_file():
     :raise IndexError: when the group signature matches, but doesn't have the subgroups group_name, target_playlist,
             playlists and artists.
     """
-    # TODO: change the file path to the real playlist_and_artists.txt
     # read input file
     with open("playlists_and_artists.txt", "r") as file:
         config_text = "".join(file.readlines())  # concatenates every line into a one single line
@@ -306,18 +306,24 @@ def read_playlist_and_artists_names_from_file():
     return names_list
 
 
-def find_latest_content_file(uri):
+def find_latest_content_file(uri, since_date=None):
     """
-    Searches for the most recently saved content file of the playlist
+    When since_date is None:
+        Searches for the most recently saved content file of the playlist.
+
+    When since_date is NOT None:
+        Searches for the newest content file of the URI that is closest to the given date
 
     :param uri: the spotify URI of the playlist / artist
     :type uri: str
-    :return: the path as a pathlib.Path object. When no file was found for URI, "None" is returned
+    :param since_date: a date
+    :type since_date: date
+    :return: the path as a pathlib.Path object. Returns "None" when no content file for the given URI is found
     """
 
     # directory structure:
     # main dir (containing all the .py files)
-    #   - content_files ( =_NAME_OF_CONTENT_DIRECTORY )
+    #   - content_files ( =: _NAME_OF_CONTENT_DIRECTORY )
     #       -spotify:playlist:<id>
     #           -spotify:playlist:<id>_content_raw_<date> (dictionary / json file)
     #           -spotify:playlist:<id>_content_raw_<date2> (dictionary / json file)
@@ -325,7 +331,7 @@ def find_latest_content_file(uri):
     #       -spotify:artist:<id>
     #           ...
 
-    # remove ":" from uri and replace them with "_" as ":" may not be part of filename on some OS
+    # remove ":"s from uri and replace them with "_" as ":" must not be part of filename on some OS
     uri = uri.replace(":", "_")
 
     # get main directory (all .py files are in the main directory)
@@ -337,33 +343,51 @@ def find_latest_content_file(uri):
     # list all files and directories of the content directory (NOT recursive)
     content_overview = listdir(content_file_dir_path)
 
-    # list all available content files for the given uri and sort them
-    for directory in content_overview:
-        if directory == uri and not os.path.isfile(directory):
-            # find the newest / most recently saved content file
-            content_files = listdir(os.path.join(content_file_dir_path, directory))
-            content_files.sort()
+    # if no since_date is passed, search for the most recent content file of the URI, that is not from today
+    if since_date is None:
+        for directory in content_overview:
+            if directory == uri and not os.path.isfile(directory):
+                # find the newest / most recently saved content file
+                content_files = listdir(os.path.join(content_file_dir_path, directory))
+                content_files.sort()
 
-            # because of the date format yyyy.mm.dd the newest file will be at the end of the SORTED list
-            latest_content_file = content_files[len(content_files) - 1]
+                # because of the date format yyyy.mm.dd the newest file will be at the end of the SORTED list
+                latest_content_file = content_files[len(content_files) - 1]
 
-            # ignore the file if it is from the current day. Otherwise the method works only once a day correctly
-            # content files always end with a date at the end, i.e. spotify_playlist_<id>_content_raw(2021.01.14).json
-            content_file_date = latest_content_file.replace(".json", "")[-11:-1]  # gets the date
-            today = str(date.today()).replace("-", ".")  # format now: yyyy.mm.dd
+                # ignore the file if it is from the current day. Otherwise the method works only once a day correctly
+                # content files always end with a date at the end,
+                # i.e.: spotify_playlist_<id>_content_raw(2021.01.14).json
+                content_file_date = latest_content_file.replace(".json", "")[-11:-1]  # gets the date
+                today = str(date.today()).replace("-", ".")  # format now: yyyy.mm.dd
 
-            if not today == content_file_date:
-                # return the path to the file as a Path object (better than a String when run on different OS)
+                if not today == content_file_date:
+                    # return the path to the file as a Path object (better than a String when run on different OS)
+                    return pathlib.Path(os.path.join(content_file_dir_path, directory, latest_content_file))
+
+                elif len(content_files) > 1:
+                    # get the second most recent entry
+                    return pathlib.Path(
+                        os.path.join(content_file_dir_path, directory, content_files[len(content_files) - 2]))
+
+                else:
+                    # if there is only one content file and it's from today, act like there is no content file
+                    return None
+
+        # if no content file is found, return nothing
+        return None
+
+    # if a since_date is passed, search for the newest content file of the URI that is closest to the given date
+    else:
+        for directory in content_overview:
+            if directory == uri and not os.path.isfile(directory):
+                # find the most recently saved content file closest to the given date using binary search
+                # binary search requires a sorted list
+                content_files = listdir(os.path.join(content_file_dir_path, directory))
+                content_files.sort()  # oldest content file at index 0
+                index = bisect_left(content_files, x=uri + "_content_raw(" + str(since_date).replace("-", ".") + ")")
+                latest_content_file = content_files[index]
+
                 return pathlib.Path(os.path.join(content_file_dir_path, directory, latest_content_file))
 
-            elif len(content_files) > 1:
-                # get the second most recent entry
-                return pathlib.Path(
-                    os.path.join(content_file_dir_path, directory, content_files[len(content_files) - 2]))
-
-            else:
-                # if there is only one content file and it's from today, act like there is no content file
-                return None
-
-    # if no content file is found, return nothing
-    return None
+        # if no content file is found, return nothing
+        return None
