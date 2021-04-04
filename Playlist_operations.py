@@ -78,13 +78,7 @@ def print_playlist_changes(sp, p_uri):
     # if a content file exists for the uri:
     if latest_content_file:
         with open(latest_content_file, "r") as oldTrackFile:
-            data = oldTrackFile.readline()  # only reads ONE line (json files have only one (very long) line)
-
-            # if there is another line throw an error
-            if oldTrackFile.readline() != "":
-                raise TypeError("the file is empty or not a json file. Path: " + latest_content_file)
-
-            old_results = json.loads(data)
+            old_results = json.load(oldTrackFile)
             old_tracks = old_results["items"]
 
         # both are a list of dictionaries each containing the song's name and its artists names
@@ -237,13 +231,7 @@ def get_new_songs_in_playlist(sp, p_uri):
         song_uris_in_playlist = get_all_songs_from_playlist(sp, p_uri)
 
         with open(latest_content_file, "r") as old_track_file:
-            data = old_track_file.readline()  # only reads ONE line (json files have only one (very long) line)
-
-            # if there is another line throw an error
-            if old_track_file.readline() != "":
-                raise TypeError("The content file is not a json file. Json files have only one (very long) line.")
-
-            old_results = json.loads(data)
+            old_results = json.load(old_track_file)
             old_tracks_uris = [song_data["track"]["uri"] for song_data in old_results["items"]]
 
         # check the playlist for new songs by check whether they were already in the old content_file or not
