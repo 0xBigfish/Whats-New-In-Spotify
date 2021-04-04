@@ -71,18 +71,18 @@ class Group(object):
 #
 # \S matches any non-whitespace character;   \s matches any whitespace character
 #
-_NAME_RE = "[^\s].*"
-_URI_ARTIST_RE = "spotify:artist:\S*"
-_URI_PLAYLIST_RE = "spotify:playlist:\S*"
+_NAME_RE = "[^\s].*"  # nopep8
+_URI_ARTIST_RE = "spotify:artist:\S*"  # nopep8
+_URI_PLAYLIST_RE = "spotify:playlist:\S*"  # nopep8
 
 _SUBGROUP_GROUP_NAME = "(?P<GROUP_NAME>.*)"
 _SUBGROUP_TARGET = "## ADD_TO:{(?P<TARGET_PLAYLIST>" + _URI_PLAYLIST_RE + ")}"
-_SUBGROUP_PLAYLISTS = "## PLAYLISTS={(?P<PLAYLISTS>(?:\s*" + _NAME_RE + "=" + _URI_PLAYLIST_RE + ")*)\s*}"
-_SUBGROUP_ARTIST = "## ARTISTS={(?P<ARTISTS>(?:\s*" + _NAME_RE + "=" + _URI_ARTIST_RE + ")*)\s*}"
+_SUBGROUP_PLAYLISTS = "## PLAYLISTS={(?P<PLAYLISTS>(?:\s*" + _NAME_RE + "=" + _URI_PLAYLIST_RE + ")*)\s*}"  # nopep8
+_SUBGROUP_ARTIST = "## ARTISTS={(?P<ARTISTS>(?:\s*" + _NAME_RE + "=" + _URI_ARTIST_RE + ")*)\s*}"  # nopep8
 
 # note: a group name is NOT restricted by the playlist and artist naming standards
 _GROUP_RE = "GROUP:" + _SUBGROUP_GROUP_NAME + "={\s*" \
-            + _SUBGROUP_TARGET + "\s*" + _SUBGROUP_PLAYLISTS + "\s*" + _SUBGROUP_ARTIST + "\s*}"
+            + _SUBGROUP_TARGET + "\s*" + _SUBGROUP_PLAYLISTS + "\s*" + _SUBGROUP_ARTIST + "\s*}"  # nopep8
 
 _PLAYLIST_TUPLE_RE = _NAME_RE + "=" + _URI_PLAYLIST_RE
 _ARTIST_TUPLE_RE = _NAME_RE + "=" + _URI_ARTIST_RE
@@ -191,7 +191,7 @@ def read_playlists_and_artists_uris_from_file():
     # a warning is thrown but this is the correct pattern !!
     # "\s*" = any number of any whitespace character
     regex = re.compile(_NAME_RE + "=\s*" + _URI_PLAYLIST_RE + "|" +
-                       _NAME_RE + "=\s*" + _URI_ARTIST_RE, re.IGNORECASE)
+                       _NAME_RE + "=\s*" + _URI_ARTIST_RE, re.IGNORECASE)  # nopep8
 
     with open("playlists_and_artists.txt", "r") as file:
         lines = file.readlines()
@@ -224,7 +224,7 @@ def read_playlists_uris_from_file():
     # noinspection RegExpDuplicateAlternationBranch
     # a warning is thrown but this is the correct pattern !!
     # "\s*" = any number of any whitespace character
-    regex = re.compile(_NAME_RE + "=\s*" + _URI_PLAYLIST_RE, re.IGNORECASE)
+    regex = re.compile(_NAME_RE + "=\s*" + _URI_PLAYLIST_RE, re.IGNORECASE)  # nopep8
 
     with open("playlists_and_artists.txt", "r") as file:
         lines = file.readlines()
@@ -257,7 +257,7 @@ def read_artists_uris_from_file():
     # noinspection RegExpDuplicateAlternationBranch
     # a warning is thrown but this is the correct pattern !!
     # "\s*" = any number of any whitespace character
-    regex = re.compile(_NAME_RE + "=\s*" + _URI_ARTIST_RE, re.IGNORECASE)
+    regex = re.compile(_NAME_RE + "=\s*" + _URI_ARTIST_RE, re.IGNORECASE)  # nopep8
 
     with open("playlists_and_artists.txt", "r") as file:
         lines = file.readlines()
@@ -289,7 +289,7 @@ def read_playlist_and_artists_names_from_file():
     # a warning is thrown but this is the correct pattern !!
     # "\s*" = any number of any whitespace character
     regex = re.compile(_NAME_RE + "=\s*" + _URI_PLAYLIST_RE + "|" +
-                       _NAME_RE + "=\s*" + _URI_ARTIST_RE, re.IGNORECASE)
+                       _NAME_RE + "=\s*" + _URI_ARTIST_RE, re.IGNORECASE)  # nopep8
 
     with open("playlists_and_artists.txt", "r") as file:
         lines = file.readlines()
