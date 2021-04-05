@@ -385,6 +385,10 @@ def find_latest_content_file(uri, since_date=None):
                 content_files = listdir(os.path.join(content_file_dir_path, directory))
                 content_files.sort()  # oldest content file at index 0
                 index = bisect_left(content_files, x=uri + "_content_raw(" + str(since_date).replace("-", ".") + ")")
+
+                # if index is len(content_files) there is no content file from or after the specified date
+                if index == len(content_files):
+                    return None
                 latest_content_file = content_files[index]
 
                 return pathlib.Path(os.path.join(content_file_dir_path, directory, latest_content_file))
