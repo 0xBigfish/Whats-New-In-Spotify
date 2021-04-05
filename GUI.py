@@ -1,10 +1,13 @@
 # sg is the default PySimpleGUI naming convention for the import
 # noinspection PyPep8Naming
+import datetime
+
 import PySimpleGUI as sg
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
 import IO_operations
+from IO_operations import get_date_from_latest_con_file
 from Playlist_operations import get_new_songs_in_playlist
 
 
@@ -155,25 +158,45 @@ while True:
         # layout of the window that opens when the "Add" button is pressed
         layout_run_window = [
             [sg.Checkbox("Safe playlist content to hard drive")],
-            [sg.Checkbox("Add new songs to your playlist")],
-            [sg.Button("Run", key="-RunButtonRunWindow-")]
+            [sg.Checkbox("Add new songs to my playlist(s)")],
+            [sg.Text("Show newly added songs since")],
+            [sg.In(default_text=str(datetime.date.today()), key="-RunWindowDateInput-", size=(15, 1)),
+             sg.CalendarButton("Select from calender", target="-RunWindowDateInput-", format="%Y-%m-%d")],
+            [sg.Text("")],  # blank line
+            [sg.Button("Run", key="-RunButtonRunWindow-", size=(15, 1))]
         ]
         window_run = sg.Window("What\'s new in Spotify", layout_run_window)
 
         event_run, values_run = window_run.read()
         while True:
             if event_run == "-RunButtonRunWindow-":
-                for playlist_tuple in groups[current_group_id].get_playlist_tuples():
+                # show an individual window with new songs for each playlist
+                for p_tuple in groups[current_group_id].get_playlist_tuples():
 
-                    #TODO: get_new_songs gibt keine neuen songs zurück, da mit der content File von Freitag verglichen wird, und seit dem sind noch keine neuen songs hinzugekommen
-                    #TODO: add eine Funktion ein custom date anzugeben, ab dem neue Songs gesucht werden sollen
+                    # list new songs in this layout and later add it to a column to assign a fixed size to it
+                    # TODO: show song name and artist instead of URI
+                    presentation_window_songs_layout \
+                        = [[sg.Text(song)] for song in get_new_songs_in_playlist(sp,
+                                                                                 p_tuple[1],
+                                                                                 values_run["-RunWindowDateInput-"])]
+                    # if there are no new songs, show "no new songs" in the presentation window
+                    if not presentation_window_songs_layout:
+                        date_str = get_date_from_latest_con_file(p_tuple[1]).strftime("%A %Y-%m-%d")
+
+                        presentation_window_songs_layout = [
+                            [sg.Text("There are no new songs since " + values_run["-RunWindowDateInput-"])],
+                            [sg.Text("")],
+                            [sg.Text("The last saved changes are from:  " + date_str)]
+                        ]
+
+                    # the layout for the windows that show new songs that have been added / released
                     layout_presentation_window = [
-                        [sg.Text("New Songs in " + playlist_tuple[0], size=(50, 20),
-                                 font="default 16 bold")],
-                        [sg.Text(song) for song in get_new_songs_in_playlist(sp, playlist_tuple[1])],
+                        [sg.Text("New Songs in " + p_tuple[0], font="default 16 bold")],
+                        [sg.Column(
+                            layout=presentation_window_songs_layout, size=(1000, 500), scrollable=True)],
                         [sg.Button("Next")]
                     ]
-                    window_presentation = sg.Window("jakf", layout_presentation_window)
+                    window_presentation = sg.Window("What's new in Spotify", layout_presentation_window)
                     event_presentation, values_presentation = window_presentation.read()
 
                     # the quit_flag is set if the user presses the "X" button instead of "Next"

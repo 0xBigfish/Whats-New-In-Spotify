@@ -3,7 +3,7 @@ import os.path
 import pathlib
 import re
 from bisect import bisect_left
-from datetime import date
+from datetime import date, datetime
 from os import listdir
 
 import URI_operations
@@ -391,3 +391,30 @@ def find_latest_content_file(uri, since_date=None):
 
         # if no content file is found, return nothing
         return None
+
+
+def get_date_from_con_file(content_file) -> date:
+    """
+    Extracts the date from the content file name and returns it as a datetime.date object
+
+        content file naming format:  spotify_<playlist / artist>_<id<_content_raw(<yyyy.mm.dd>).json
+
+    :param content_file: the path of a content file (as pathlib.Path object)
+    :type content_file: pathlib.Path
+    :return: the date of the content file
+    """
+    date_wrong_format = str(content_file).replace(".json", "")[-11:-1]  # gets the date, format: yyyy.mm.dd
+    return datetime.strptime(date_wrong_format.replace(".", "-"), "%Y-%m-%d")
+
+
+def get_date_from_latest_con_file(uri) -> date:
+    """
+    Finds the latest content file for the URI, extract the date and returns it as a datetime.date object
+
+    :param uri: the spotify URI of a playlist / artist
+    :type uri: str
+    :return: the date of the latest content file
+    """
+    # gets the date, format: yyyy.mm.dd
+    date_wrong_format = str(find_latest_content_file(uri)).replace(".json", "")[-11:-1]
+    return datetime.strptime(date_wrong_format.replace(".", "-"), "%Y-%m-%d")
