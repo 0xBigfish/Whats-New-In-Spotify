@@ -4,9 +4,10 @@ import datetime
 
 import PySimpleGUI as sg
 import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.oauth2 import SpotifyOAuth
 
 import IO_operations
+import Playlist_operations
 from IO_operations import get_date_from_latest_con_file
 from Playlist_operations import get_new_songs_in_playlist
 
@@ -100,7 +101,10 @@ def generate_button_column_layout():
 #                                                                                       #
 #                              Open connection to Spotify                               #
 #                                                                                       #
-sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())                           #
+REDIRECT_URI = "https://www.duckduckgo.com"                                             #
+# to add more just add them separated by a comma                                        #
+scope = "playlist-modify-private"                                                       #
+sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope, redirect_uri=REDIRECT_URI)) #
 #                                                                                       #
 #########################################################################################
 
@@ -157,10 +161,15 @@ while True:
 
         # layout of the window that opens when the "Add" button is pressed
         layout_run_window = [
-            [sg.Checkbox("Safe playlist content to hard drive")],
-            [sg.Checkbox("Add new songs to my playlist(s)")],
+            [sg.Checkbox("Safe playlist content to hard drive", key="-RunWindowSaveCheck-", default=True)],
+            [sg.Checkbox("Add new songs to my playlist(s)", key="-RunWindowAddCheck-")],
+            [sg.Checkbox("Remove / clear every songs from playlist before adding new songs",
+                         key="-RunWindowClearCheck-")],
+            [sg.Text("")],  # blank line
             [sg.Text("Show newly added songs since")],
-            [sg.In(default_text=str(datetime.date.today()), key="-RunWindowDateInput-", size=(15, 1)),
+            [sg.In(default_text=str(datetime.date.today() - datetime.timedelta(7)),
+                   key="-RunWindowDateInput-",
+                   size=(15, 1)),
              sg.CalendarButton("Select from calender", target="-RunWindowDateInput-", format="%Y-%m-%d")],
             [sg.Text("")],  # blank line
             [sg.Button("Run", key="-RunButtonRunWindow-", size=(15, 1))]
@@ -170,6 +179,8 @@ while True:
         event_run, values_run = window_run.read()
         while True:
             if event_run == "-RunButtonRunWindow-":
+                songs_to_add = []
+
                 # show an individual window with new songs for each playlist
                 for p_tuple in groups[current_group_id].get_playlist_tuples():
 
@@ -186,8 +197,24 @@ while True:
                         presentation_window_songs_layout = [
                             [sg.Text("There are no new songs since " + values_run["-RunWindowDateInput-"])],
                             [sg.Text("")],
-                            [sg.Text("The last saved changes are from:  " + date_str)]
+                            [sg.Text("The last saved changes (excluding today) are from:  " + date_str)]
                         ]
+
+                    # if the "save playlist content" checkbox is ticked, save the playlist content to the hard drive
+                    # and tell the user that the content has been saved in the presentation window
+                    if values_run["-RunWindowSaveCheck-"]:
+                        IO_operations.safe_uri_content_to_hard_drive(sp, p_tuple[1])
+
+                        presentation_window_songs_layout.insert(0, [sg.Text("Playlist content saved to hard drive!")])
+                        presentation_window_songs_layout.insert(1, [sg.Text("")])  # blank line
+
+                    # if the "add songs to playlist" checkbox is ticked, save new songs in songs_to_add
+                    # duplicates are removed later, once all new songs from all playlists have been collected
+                    if values_run["-RunWindowAddCheck-"]:
+                        songs_to_add += \
+                            Playlist_operations.get_new_songs_in_playlist(sp,
+                                                                          p_tuple[1],
+                                                                          values_run["-RunWindowDateInput-"])
 
                     # the layout for the windows that show new songs that have been added / released
                     layout_presentation_window = [
@@ -212,6 +239,18 @@ while True:
 
                     if quit_flag:
                         break
+
+                # if the "clear playlist" checkbox is ticked, clear the entire playlist before adding the new songs
+                if values_run["-RunWindowClearCheck-"]:
+                    Playlist_operations.remove_all_songs_from_playlist(sp,
+                                                                       groups[current_group_id].get_target_playlist())
+
+                # add all new songs at once => only a single request is sent to Spotify instead of one per playlist
+                # also remove duplicate songs because who needs to have the same song multiple times in a playlist
+                no_duplicates = [s for n, s in enumerate(songs_to_add) if s not in songs_to_add[:n]]
+                Playlist_operations.add_songs_to_playlist(sp,
+                                                          playlist_uri=groups[current_group_id].get_target_playlist(),
+                                                          song_uris=no_duplicates)
                 break
 
             if event_run == sg.WINDOW_CLOSED:
