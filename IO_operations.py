@@ -111,7 +111,8 @@ def read_groups_from_file():
     for matchNum, match in enumerate(matches, start=0):
 
         # check for consistency
-        # each match will have 4 groups: the group name, the target playlist,the playlists and the artists.
+        # each match will have 4 attributes: the group name, the target playlist,the playlists
+        # and the artists. The command .groups() is used to get them.
         # group(0) is the complete match, but it's not counted by len(match.group())
         if len(match.groups()) != 4:
             raise IndexError("A match must have 4 groups, otherwise it's an illegal match! \n"
@@ -135,6 +136,37 @@ def read_groups_from_file():
         match_list.append(group)
 
     return match_list
+
+
+def save_group_to_file(group):
+    """
+    Saves a group to the playlist_and_artist.txt file.
+
+    :param group: the group that should be saved to the file
+    :return:
+    """
+    # 'a' means append, new lines will be added to the end of the file
+    with open("playlists_and_artists.txt", "a") as file:
+        file.write("\n\n\n")
+        file.write("GROUP:" + group.get_group_name() + "={\n")
+        file.write("## ADD_TO:{" + group.get_target_playlist() + "}\n")
+        file.write("\n")
+
+        # write the playlists to the file
+        file.write("## PLAYLISTS={\n")
+        for p_tuple in group.get_playlist_tuples():
+            file.write("\t" + p_tuple[0] + "=" + p_tuple[1] + "\n")
+        file.write("}\n")
+        file.write("\n")    # one blank line for readability
+
+        # write the artists to the file
+        file.write("## ARTISTS={\n")
+        for a_tuple in group.get_artist_tuples():
+            file.write(a_tuple[0] + "=" + a_tuple[1] + "\n")
+        file.write("}\n")
+
+        # last closing parenthesis to end the group
+        file.write("}\n")
 
 
 def safe_uri_content_to_hard_drive(sp, uri):
