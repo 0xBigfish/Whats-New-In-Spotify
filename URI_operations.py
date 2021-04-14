@@ -1,3 +1,8 @@
+import re
+
+import IO_operations
+
+
 def get_playlist_id_from_uri(uri):
     """
     Extracts the ID out of the URI. The ID is the code at the end of the URI, for example: \n
@@ -50,3 +55,27 @@ def get_song_id_from_uri(uri):
         raise ValueError("URI is not not a song URI! URI type: " + temp.partition(":")[0])
 
     return temp.partition(":")[2]
+
+
+def is_playlist_uri(given_string):
+    """
+    Check whether or not a given string is a spotify playlist URI.
+
+
+    Attention: The string MUST NOT contain anything else than the URI.
+        For example: If there is a whitespace at the end
+        of the URI the method will return false
+
+    :param given_string: the string that will be checked
+    :return: True when the given string is a Spotify URI, False when not
+    """
+    uri_playlist_re = IO_operations.get_playlist_re()
+
+    match = re.match(uri_playlist_re, given_string)
+    if match and match.group(0) == given_string:
+        return True
+    else:
+        return False
+
+
+

@@ -93,6 +93,13 @@ _ARTIST_TUPLE_RE = _NAME_RE + "=" + _URI_ARTIST_RE
 _NAME_OF_CONTENT_DIRECTORY = "content_files"
 
 
+def get_playlist_re():
+    """
+    Get the regular expression used to match a playlist URI
+    """
+    return _URI_PLAYLIST_RE
+
+
 def read_groups_from_file():
     """
     Reads all groups from the file and returns them as a list of Group objects where group_ID starts at 0

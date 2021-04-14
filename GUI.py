@@ -8,6 +8,7 @@ from spotipy.oauth2 import SpotifyOAuth
 
 import IO_operations
 import Playlist_operations
+import URI_operations
 from IO_operations import get_date_from_latest_con_file
 from Playlist_operations import get_new_songs_in_playlist
 
@@ -97,6 +98,27 @@ def generate_button_column_layout():
     return generated_buttons_layout
 
 
+def update_groups_data():
+    """
+    This method is mainly used to initially read and create the groups, and then whenever a group is added or
+    deleted from the file.
+
+
+    Read the groups from the file and include each group's ID in the name that's shown to the user
+    """
+    # groups_ and group_names_ have a '_' at the end, otherwise the compiler gives a warning:
+    # Shadows name 'groups' from outer scope
+
+    # variables need to be global, as a lot of statements across different windows read from them. The global trait
+    # should ensure consistency
+    groups_ = IO_operations.read_groups_from_file()
+
+    # include the group Id in the name, to have a bijective mapping from group_name to group id
+    group_names_ = [str(group.get_group_id()) + ": " + group.get_group_name() for group in groups_]
+
+    return groups_, group_names_
+
+
 #########################################################################################
 #                                                                                       #
 #                              Open connection to Spotify                               #
@@ -104,7 +126,8 @@ def generate_button_column_layout():
 REDIRECT_URI = "https://www.duckduckgo.com"                                             #
 # to add more just add them separated by a comma                                        #
 scope = "playlist-modify-private"                                                       #
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope, redirect_uri=REDIRECT_URI)) #
+sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope,                             #
+                                               redirect_uri=REDIRECT_URI))              #
 #                                                                                       #
 #########################################################################################
 
@@ -117,10 +140,9 @@ uri_checkbox_value = False
 use_frames_in_layout = True
 current_group_id = 0
 
-groups = IO_operations.read_groups_from_file()
-
-# include the group Id in the name, to have a bijective mapping from group_name to group id
-group_names = [str(group.get_group_id()) + ": " + group.get_group_name() for group in groups]
+# read groups from the playlist_and_artist.txt file and add each group's id to its name to archive bijective mapping
+# from group_name to group id
+groups, group_names = update_groups_data()
 
 # Define the window's contents
 # the windows is divided into a grid. A layout is a list of list, representing columns and rows
@@ -258,6 +280,71 @@ while True:
 
         window.enable()
         window_run.close()
+        window.force_focus()
+
+    if event == "-NewGroupButton-":
+        window.disable()  # freeze the main window until the user has correctly made their input or closed the window
+
+        layout_new_group_window = [
+            [sg.Text("Create a new Group:", font="default 16 bold")],
+            [sg.Text("Group name: "), sg.In("", size=(20, 1), key="-NewGroupWindowGroupNameInput-")],
+            [sg.Text("")],  # blank line
+            [sg.Text("Enter the Spotify URI of the target playlist below. All songs from the playlists and artists you"
+                     " want to observe, will be added to this playlist. \n"
+                     "\n"
+                     "In order to get the playlist's Spotify URI, go to Spotify, open the playlist and click the "
+                     "three dots next to the 'Play' button.\n"
+                     "A menu will open where you select 'Share' and click"
+                     " 'Copy Spotify URI'. Paste the copied URI into the box below.")],
+            [sg.Text("Target playlist:"), sg.In("", size=(40, 1), key="-NewGroupWindowTargetPlaylistInput-")],
+            [sg.Text("")],  # blank line
+            [sg.Button("Create Group", key="-CreateGroupButton-")]
+        ]
+        window_new_group = sg.Window("What\'s new in Spotify", layout_new_group_window)
+
+        event_new_group, values_new_group = window_new_group.read()
+        while True:
+            if event_new_group == sg.WINDOW_CLOSED:
+                break
+
+            if event_new_group == "-CreateGroupButton-":
+                # Check if the target playlist is a correct spotify playlist URI. Otherwise the created group will not
+                # be recognised by the REs used to get the groups and their playlist and stuff from the file
+                if not URI_operations.is_playlist_uri(values_new_group["-NewGroupWindowTargetPlaylistInput-"]) \
+                        and not values_new_group["-NewGroupWindowTargetPlaylistInput-"] == "":
+                    sg.PopupError("Error: The URI you entered is not a playlist URI!\n"
+                                  "A playlist URI always looks "
+                                  "like this: \n\n"
+                                  "spotify:playlist:<playlist_id> \n\n"
+                                  "where <playlist_id> is the playlist's ID (without the '<' and '>').\n"
+                                  "Ensure you don't have (white-)spaces at the beginning or end of the URI!\n\n"
+                                  "Your input was:\n" +
+                                  values_new_group["-NewGroupWindowTargetPlaylistInput-"])
+
+                    # delete the user's input to prevent and endless stream of popup windows
+                    window_new_group["-NewGroupWindowTargetPlaylistInput-"].Update(value="")
+                    event_new_group, values_new_group = window_new_group.read()
+
+                # the user had entered a valid spotify playlist URI -> save the new group to the file
+                else:
+                    new_group = IO_operations.Group(group_id=0,
+                                                    group_name=values_new_group["-NewGroupWindowGroupNameInput-"],
+                                                    target_playlist=values_new_group[
+                                                        "-NewGroupWindowTargetPlaylistInput-"],
+                                                    playlist_tuples=[],
+                                                    artist_tuples=[])
+                    IO_operations.save_group_to_file(new_group)
+
+                    # update the groups and group_names lists to actually show the new group
+                    groups, group_names = update_groups_data()
+                    window["-ComboBox-"].Update(values=group_names)
+                    print("combo updated")
+
+                    sg.PopupOK("New group successfully created !")
+                    break
+
+        window.enable()
+        window_new_group.close()
         window.force_focus()
 
     # when "Add" button is pressed, open an input window
