@@ -111,6 +111,7 @@ def read_groups_from_file():
     # read input file
     with open("playlists_and_artists.txt", "r") as file:
         config_text = "".join(file.readlines())  # concatenates every line into a one single line
+        file.close()
 
     matches = re.finditer(_GROUP_RE, config_text)
     match_list = []
@@ -175,6 +176,8 @@ def save_group_to_file(group):
         # last closing parenthesis to end the group
         file.write("}\n")
 
+        file.close()
+
 
 def safe_uri_content_to_hard_drive(sp, uri):
     """
@@ -234,6 +237,7 @@ def read_playlists_and_artists_uris_from_file():
 
     with open("playlists_and_artists.txt", "r") as file:
         lines = file.readlines()
+        file.close()
 
     # entries must be of format: "<name> = <URI>", extract them using the regular expression
     for line in lines:
@@ -267,6 +271,7 @@ def read_playlists_uris_from_file():
 
     with open("playlists_and_artists.txt", "r") as file:
         lines = file.readlines()
+        file.close()
 
     # entries must be of format: "<name> = <URI>", extract them using the regular expression
     for line in lines:
@@ -300,6 +305,7 @@ def read_artists_uris_from_file():
 
     with open("playlists_and_artists.txt", "r") as file:
         lines = file.readlines()
+        file.close()
 
     # entries must be of format: "<name> = <URI>", extract them using the regular expression
     for line in lines:
@@ -332,6 +338,7 @@ def read_playlist_and_artists_names_from_file():
 
     with open("playlists_and_artists.txt", "r") as file:
         lines = file.readlines()
+        file.close()
 
     # entries must be of format: "<name> = <URI>", extract them using the regular expression
     for line in lines:
