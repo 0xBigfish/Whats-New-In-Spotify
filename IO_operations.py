@@ -100,6 +100,13 @@ def get_playlist_re():
     return _URI_PLAYLIST_RE
 
 
+def get_artist_re():
+    """
+    Get the regular expression used to match a artist URI
+    """
+    return _URI_ARTIST_RE
+
+
 def read_groups_from_file():
     """
     Reads all groups from the file and returns them as a list of Group objects where group_ID starts at 0
@@ -110,7 +117,7 @@ def read_groups_from_file():
     """
     # read input file
     with open("playlists_and_artists.txt", "r") as file:
-        config_text = "".join(file.readlines())  # concatenates every line into a one single line
+        config_text = "".join(file.readlines())  # concatenates every line into a one single string
         file.close()
 
     matches = re.finditer(_GROUP_RE, config_text)
@@ -468,3 +475,39 @@ def get_date_from_latest_con_file(uri) -> date:
     # gets the date, format: yyyy.mm.dd
     date_wrong_format = str(find_latest_content_file(uri)).replace(".json", "")[-11:-1]
     return datetime.strptime(date_wrong_format.replace(".", "-"), "%Y-%m-%d")
+
+
+def add_playlist_to_group(p_tuple, group):
+    """
+
+    :param p_tuple:
+    :type p_tuple: tuple[str,str]
+    :param group:
+    :type group: Group
+    """
+    with open("playlists_and_artists.txt", "r") as file:
+        config_text = "".join(file.readlines())  # concatenates every line into a one single string
+        file.close()
+
+    for match in re.finditer(pattern=_GROUP_RE, string=config_text):
+        # find the correct group
+        if match.group("GROUP_NAME") == group.get_group_name():
+
+            # read the group's current playlists by getting the beginning and end of the RE's subgroup "PLAYLISTS"
+            span = match.span("PLAYLISTS")  # returns a tuple
+            current_playlists = config_text[span[0]: span[1]]
+
+            # append the new playlist
+            current_playlists += "\n\n\t" + p_tuple[0] + "=" + p_tuple[1]
+
+            # overwrite the old playlists in the file (actually overwrite the whole file)
+            # note: I don't know how to find the correct position / line in the file with REs. That is the sole reason
+            #       I overwrite the whole file.
+            #       I know this is ineffective but the file isn't huge so it's not that big of a deal
+            with open("playlists_and_artists.txt", "w") as file:
+                config_text = config_text[:span[0]] + current_playlists + config_text[span[1]:]
+                file.write(config_text)
+                file.close()
+
+            # found the correct group and did everything that needed to be done, no need to look further
+            break

@@ -67,7 +67,7 @@ def is_playlist_uri(given_string):
         of the URI the method will return false
 
     :param given_string: the string that will be checked
-    :return: True when the given string is a Spotify URI, False when not
+    :return: True when the given string is a Spotify playlist URI, False when not
     """
     uri_playlist_re = IO_operations.get_playlist_re()
 
@@ -78,4 +78,22 @@ def is_playlist_uri(given_string):
         return False
 
 
+def is_artist_uri(given_string):
+    """
+    Check whether or not a given string is a spotify artist URI.
 
+
+    Attention: The string MUST NOT contain anything else than the URI.
+        For example: If there is a whitespace at the end
+        of the URI the method will return false
+
+    :param given_string: the string that will be checked
+    :return: True when the given string is a Spotify artist URI, False when not
+    """
+    uri_artist_re = IO_operations.get_artist_re()
+
+    match = re.match(uri_artist_re, given_string)
+    if match and match.group(0) == given_string:
+        return True
+    else:
+        return False

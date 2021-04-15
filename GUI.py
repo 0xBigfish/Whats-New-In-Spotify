@@ -105,12 +105,11 @@ def update_groups_data():
 
 
     Read the groups from the file and include each group's ID in the name that's shown to the user
+
+    :return: tuple (groups, group_names)
     """
     # groups_ and group_names_ have a '_' at the end, otherwise the compiler gives a warning:
     # Shadows name 'groups' from outer scope
-
-    # variables need to be global, as a lot of statements across different windows read from them. The global trait
-    # should ensure consistency
     groups_ = IO_operations.read_groups_from_file()
 
     # include the group Id in the name, to have a bijective mapping from group_name to group id
@@ -327,7 +326,7 @@ while True:
 
                 # check if the user named the group. An empty name is not allowed as it will probably result in a bug
                 elif values_new_group["-NewGroupWindowGroupNameInput-"] == "":
-                    sg.PopupError("You have not entered a value in the 'Group name' field!\n"
+                    sg.PopupError("Error: You have not entered a value in the 'Group name' field!\n"
                                   "\n"
                                   "The field must NOT be emtpy, your group needs a name!")
 
@@ -337,7 +336,7 @@ while True:
                 # check if the user specified a target playlist. The script can't add new songs to it if
                 # there is no target playlist
                 elif values_new_group["-NewGroupWindowTargetPlaylistInput-"] == "":
-                    sg.PopupError("You have not entered a value in the 'Target Playlist' field!\n"
+                    sg.PopupError("Error: You have not entered a value in the 'Target Playlist' field!\n"
                                   "\n"
                                   "The field must NOT be emtpy!")
 
@@ -357,7 +356,6 @@ while True:
                     # update the groups and group_names lists to actually show the new group
                     groups, group_names = update_groups_data()
                     window["-ComboBox-"].Update(values=group_names)
-                    print("combo updated")
 
                     sg.PopupOK("New group successfully created !")
                     break
@@ -372,16 +370,79 @@ while True:
 
         # layout of the window that open when the "Add" button is pressed
         layout_add_window = [
-            [sg.Text("Playlist / Artist name", size=(40, 1)), sg.Text("Spotify URI", size=(40, 1))],
-            [sg.Input(size=(40, 1), key="-AddWindowName-"), sg.Input(size=(40, 1), key="-AddWindowURI-")],
-            [sg.Button("Confirm", size=(10, 1))]]
+            [sg.Text("Add playlist or artist to the current group:", font="default 16 bold")],
+            [sg.Text("")],
+            [sg.Text("Playlist / artist name: ", size=(20, 1)), sg.Input(size=(40, 1), key="-AddWindowName-")],
+            [sg.Text("Spotify URI: ", size=(20, 1)), sg.Input(size=(40, 1), key="-AddWindowURI-")],
+            [sg.Text("")],
+            [sg.Button("Confirm", size=(10, 1))]
+        ]
 
         window_add = sg.Window("What\'s new in Spotify", layout_add_window)
 
         event_add, values_add = window_add.read()
         while True:
-            if event_add == sg.WINDOW_CLOSED or event_add == "Confirm":
+            if event_add == sg.WINDOW_CLOSED:
                 break
+
+            if event_add == "Confirm":
+                # an error popup is shown if the user doesn't enter a name for the playlist / artist
+                if values_add["-AddWindowName-"] == "":
+                    sg.PopupError("Error: You have not entered a value in the 'Playlist / artist name' field!\n"
+                                  "\n"
+                                  "The field must NOT be emtpy!")
+                    # read the window values again to reset the button press event and by that prevent and infinite loop
+                    event_new_group, values_new_group = window_add.read()
+
+                # an error popup is shown if the user made no input to the 'Spotify URI' field
+                elif values_add["-AddWindowURI-"] == "":
+                    sg.PopupError("Error: You have not entered a value in the 'Spotify URI' field!\n"
+                                  "\n"
+                                  "The field must NOT be emtpy!")
+                    # read the window values again to reset the button press event and by that prevent and infinite loop
+                    event_new_group, values_new_group = window_add.read()
+
+                # if the user entered a valid ARTIST uri, add the artist to the group
+                elif URI_operations.is_artist_uri(values_add["-AddWindowURI-"]):
+                    # TODO: Implement this button (add_artist_to_group() method still missing)
+                    sg.Popup("Currently not implemented")
+                    break
+
+                # if the user entered a valid PLAYLIST uri, add the playlist to the group
+                elif URI_operations.is_playlist_uri(values_add["-AddWindowURI-"]):
+                    IO_operations.add_playlist_to_group(
+                        p_tuple=(values_add["-AddWindowName-"], values_add["-AddWindowURI-"]),
+                        group=groups[current_group_id]
+                    )
+                    sg.Popup("Entry successfully added!")
+
+                    # TODO: create a single update method which updates everything needed instead of this mess
+                    # update the whole window to show the newly added playlist / artist
+                    # actually only the group specific information has to be updated, but the whole window needs to be
+                    # reloaded to show these changes, as PySimpleGUI can't update the content of the playlist and artist
+                    # columns / frame without creating a new layout for them.
+                    groups, group_names = update_groups_data()
+                    current_group_id = get_group_id_from_name(values["-ComboBox-"])
+                    group_content_layout = generate_group_content_layout(current_group_id)
+                    buttons_layout = generate_button_column_layout()
+                    window.enable()
+                    window = sg.Window("What\'s new in Spotify", generate_main_window_layout(), finalize=True)
+                    window.disable()
+                    print("updated")
+                    break
+
+                # the user made inputs but the entered string is not an artist or playlist uri
+                else:
+                    sg.PopupError("Error: The URI you entered is not a playlist URI!\n"
+                                  "A playlist URI always looks "
+                                  "like this: \n\n"
+                                  "spotify:playlist:<playlist_id> \n\n"
+                                  "where <playlist_id> is the playlist's ID (without the '<' and '>').\n"
+                                  "Ensure you don't have (white-)spaces at the beginning or end of the URI!\n\n"
+                                  "Your input was:\n" +
+                                  values_add["-AddWindowURI-"])
+                    # read the window values again to reset the button press event and by that prevent and infinite loop
+                    event_new_group, values_new_group = window_add.read()
 
         # close the input window and unfreeze the main window
         window.enable()
@@ -440,7 +501,7 @@ while True:
         window.force_focus()
 
     # when "Change Group" button is pressed, update the whole window.
-    # actually only the group specific information has to be updated, but the whole needs to be reloaded to show
+    # actually only the group specific information has to be updated, but the whole window needs to be reloaded to show
     # these changes, as PySimpleGUI can't update the content of the playlist and artist columns / frame without
     # creating a new layout for them.
     if event == "-ComboBox-":
