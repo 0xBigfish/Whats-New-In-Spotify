@@ -1,7 +1,7 @@
 # sg is the default PySimpleGUI naming convention for the import
-# noinspection PyPep8Naming
 import datetime
 
+# noinspection PyPep8Naming
 import PySimpleGUI as sg
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -282,6 +282,7 @@ while True:
         window_run.close()
         window.force_focus()
 
+    # when "New Group" button is pressed, open an input window
     if event == "-NewGroupButton-":
         window.disable()  # freeze the main window until the user has correctly made their input or closed the window
 
@@ -319,10 +320,28 @@ while True:
                                   "where <playlist_id> is the playlist's ID (without the '<' and '>').\n"
                                   "Ensure you don't have (white-)spaces at the beginning or end of the URI!\n\n"
                                   "Your input was:\n" +
-                                  values_new_group["-NewGroupWindowTargetPlaylistInput-"])
+                                  "\'" + values_new_group["-NewGroupWindowTargetPlaylistInput-"] + "\'")
 
-                    # delete the user's input to prevent and endless stream of popup windows
-                    window_new_group["-NewGroupWindowTargetPlaylistInput-"].Update(value="")
+                    # read the window values again to reset the button press event and by that prevent and infinite loop
+                    event_new_group, values_new_group = window_new_group.read()
+
+                # check if the user named the group. An empty name is not allowed as it will probably result in a bug
+                elif values_new_group["-NewGroupWindowGroupNameInput-"] == "":
+                    sg.PopupError("You have not entered a value in the 'Group name' field!\n"
+                                  "\n"
+                                  "The field must NOT be emtpy, your group needs a name!")
+
+                    # read the window values again to reset the button press event and by that prevent and infinite loop
+                    event_new_group, values_new_group = window_new_group.read()
+
+                # check if the user specified a target playlist. The script can't add new songs to it if
+                # there is no target playlist
+                elif values_new_group["-NewGroupWindowTargetPlaylistInput-"] == "":
+                    sg.PopupError("You have not entered a value in the 'Target Playlist' field!\n"
+                                  "\n"
+                                  "The field must NOT be emtpy!")
+
+                    # read the window values again to reset the button press event and by that prevent and infinite loop
                     event_new_group, values_new_group = window_new_group.read()
 
                 # the user had entered a valid spotify playlist URI -> save the new group to the file
