@@ -100,22 +100,53 @@ def generate_button_column_layout():
 
 def update_groups_data():
     """
-    This method is mainly used to initially read and create the groups, and then whenever a group is added or
-    deleted from the file.
+    This method is mainly used to initially read and create the groups, and then whenever any group is altered
+        - group added to the file
+        - group deleted from the file
+        - playlist / artist added to a group
+        - playlist / artist removed from a group
 
 
-    Read the groups from the file and include each group's ID in the name that's shown to the user
-
-    :return: tuple (groups, group_names)
+    Read the groups from the file and include each group's ID in the string that's shown to the user
     """
-    # groups_ and group_names_ have a '_' at the end, otherwise the compiler gives a warning:
-    # Shadows name 'groups' from outer scope
-    groups_ = IO_operations.read_groups_from_file()
+    # make groups and group_names global to ensure consistency across all operations on groups
+    global groups, group_names
+    groups = IO_operations.read_groups_from_file()
 
     # include the group Id in the name, to have a bijective mapping from group_name to group id
-    group_names_ = [str(group.get_group_id()) + ": " + group.get_group_name() for group in groups_]
+    group_names = [str(group.get_group_id()) + ": " + group.get_group_name() for group in groups]
 
-    return groups_, group_names_
+
+def update_main_window():
+    """
+    Update the whole main window. This method is used when any group information that is shown in the
+    group_content_layout column elements is altered:
+        - a playlist / artist is added to the current group
+        - a playlist / artist is removed from the current group
+
+
+    PySimpleGui can NOT update the content of columns and frames without creating a new column / frame element that
+    needs to be embedded in a new window.
+    This method basically creates a new window and closes the old one. The PySimpleGUI creator said in an issue
+    on github (can't remember the exact issue ID right now) that creating a new window was the best solution to this
+    problem.
+    """
+    # to alter variables outside of the scope of this method the 'global' identifier must be used
+    global current_group_id, group_content_layout, buttons_layout, window
+
+    # update data
+    update_groups_data()
+    current_group_id = get_group_id_from_name(values["-ComboBox-"])
+
+    # create new layouts
+    group_content_layout = generate_group_content_layout(current_group_id)
+    buttons_layout = generate_button_column_layout()
+
+    # create new window
+    old_window = window
+    window = sg.Window("What\'s new in Spotify", generate_main_window_layout(), finalize=True)
+    old_window.close()
+    print("updated")
 
 
 #########################################################################################
@@ -141,7 +172,9 @@ current_group_id = 0
 
 # read groups from the playlist_and_artist.txt file and add each group's id to its name to archive bijective mapping
 # from group_name to group id
-groups, group_names = update_groups_data()
+groups = []
+group_names = []
+update_groups_data()
 
 # Define the window's contents
 # the windows is divided into a grid. A layout is a list of list, representing columns and rows
@@ -354,7 +387,7 @@ while True:
                     IO_operations.save_group_to_file(new_group)
 
                     # update the groups and group_names lists to actually show the new group
-                    groups, group_names = update_groups_data()
+                    update_groups_data()
                     window["-ComboBox-"].Update(values=group_names)
 
                     sg.PopupOK("New group successfully created !")
@@ -416,19 +449,8 @@ while True:
                     )
                     sg.Popup("Entry successfully added!")
 
-                    # TODO: create a single update method which updates everything needed instead of this mess
                     # update the whole window to show the newly added playlist / artist
-                    # actually only the group specific information has to be updated, but the whole window needs to be
-                    # reloaded to show these changes, as PySimpleGUI can't update the content of the playlist and artist
-                    # columns / frame without creating a new layout for them.
-                    groups, group_names = update_groups_data()
-                    current_group_id = get_group_id_from_name(values["-ComboBox-"])
-                    group_content_layout = generate_group_content_layout(current_group_id)
-                    buttons_layout = generate_button_column_layout()
-                    window.enable()
-                    window = sg.Window("What\'s new in Spotify", generate_main_window_layout(), finalize=True)
-                    window.disable()
-                    print("updated")
+                    update_main_window()
                     break
 
                 # the user made inputs but the entered string is not an artist or playlist uri
@@ -505,20 +527,13 @@ while True:
     # these changes, as PySimpleGUI can't update the content of the playlist and artist columns / frame without
     # creating a new layout for them.
     if event == "-ComboBox-":
-        current_group_id = get_group_id_from_name(values["-ComboBox-"])
-        group_content_layout = generate_group_content_layout(current_group_id)
-        buttons_layout = generate_button_column_layout()
-        window = sg.Window("What\'s new in Spotify", generate_main_window_layout())
-        print("updated")
+        update_main_window()
 
     # when the URI checkbox is clicked, update the whole window
     # (for the same reason as described above the "-ComboBox-" event)
     if event == "-URICheckbox-":
         uri_checkbox_value = values["-URICheckbox-"]
-        group_content_layout = generate_group_content_layout(current_group_id)
-        buttons_layout = generate_button_column_layout()
-        window = sg.Window("What\'s new in Spotify", generate_main_window_layout())
-        print("updated")
+        update_main_window()
 
 # Finish up by removing from the screen
 window.close()
