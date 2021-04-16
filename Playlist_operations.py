@@ -93,7 +93,7 @@ def print_playlist_changes(sp, p_uri):
             flag_is_new_song = True
             for old_track in old_tracks:
                 # if the current track matches with a track in the old list, then it's not a new song
-                if new_track["track"]["uri"] == old_track["track"]["uri"]:
+                if new_track["track"]["uri"] == old_track["track"]["uri"] and new_track["track"]["uri"] is not None:
                     flag_is_new_song = False
                     break
 
@@ -206,8 +206,10 @@ def get_all_songs_from_playlist(sp, p_uri):
 
     # get the playlists tracks
     latest_tracks = results_dict["items"]
-
-    return [new_track["track"]["uri"] for new_track in latest_tracks]
+    if latest_tracks:
+        return [new_track["track"]["uri"] for new_track in latest_tracks if new_track["track"] is not None]
+    else:
+        return []
 
 
 def get_new_songs_in_playlist(sp, p_uri, since_date=None):
@@ -222,7 +224,7 @@ def get_new_songs_in_playlist(sp, p_uri, since_date=None):
     :type p_uri: str
     :type sp: spotipy.Spotify
     :type since_date: date
-    :return: a list containing all new songs in the playlist
+    :return: a list containing the uris of all new songs in the playlist
     """
     # read old playlist content from file
     if since_date is None:
@@ -238,7 +240,8 @@ def get_new_songs_in_playlist(sp, p_uri, since_date=None):
 
         with open(latest_content_file, "r") as old_track_file:
             old_results = json.load(old_track_file)
-            old_tracks_uris = [song_data["track"]["uri"] for song_data in old_results["items"]]
+            old_tracks_uris = [song_data["track"]["uri"]
+                               for song_data in old_results["items"] if song_data["track"] is not None]
 
         # check the playlist for new songs by check whether they were already in the old content_file or not
         new_songs = [song for song in song_uris_in_playlist if not old_tracks_uris.__contains__(song)]
@@ -386,7 +389,11 @@ def remove_duplicate_songs_from_playlist(sp, playlist_uri):
 
     # see get_all_songs_from_playlist() for a more detailed documentation of results_dict (json file)
     results_dict = sp.playlist_items(p_id)
-    song_uris = [results_dict["items"][i]["track"]["uri"] for i in range(0, len(results_dict["items"]))]
+    if results_dict:
+        song_uris = [results_dict["items"][i]["track"]["uri"]
+                     for i in range(0, len(results_dict["items"])) if results_dict["items"][i]["track"] is not None]
+    else:
+        song_uris = []
     items_to_remove = []
 
     # important: j starts at i+1
