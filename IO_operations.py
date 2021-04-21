@@ -549,3 +549,78 @@ def add_artist_to_group(a_tuple, group):
 
             # found the correct group and did everything that needed to be done, no need to look further
             break
+
+
+def remove_playlist_from_group(playlist_tuple, group):
+    """
+        Removes the artist specified in playlist_tuple from the group by erasing the entry from the
+        playlist_and_artist.txt
+        file
+
+        :param playlist_tuple:
+        :type playlist_tuple: tuple[str, str]
+        :param group:
+        :type group: Group
+        """
+    with open("playlists_and_artists.txt", "r") as file:
+        config_text = "".join(file.readlines())  # concatenates every line into a one single string
+        file.close()
+
+    for match in re.finditer(pattern=_GROUP_RE, string=config_text):
+        # find the correct group
+        if match.group("GROUP_NAME") == group.get_group_name():
+            # read the group's current playlists by getting the beginning and end of the RE's subgroup "PLAYLISTS"
+            span = match.span("PLAYLISTS")  # returns a tuple
+            current_playlists = config_text[span[0]: span[1]]
+
+            # remove the artist
+            current_playlists = current_playlists.replace("\n\n\t" + playlist_tuple[0] + "=" + playlist_tuple[1], "")
+
+            # overwrite the old artists in the file (actually overwrite the whole file)
+            # note: I don't know how to find the correct position / line in the file with REs. That is the sole reason
+            #       I overwrite the whole file.
+            #       I know this is ineffective but the file isn't huge so it's not that big of a deal
+            with open("playlists_and_artists.txt", "w") as file:
+                config_text = config_text[:span[0]] + current_playlists + config_text[span[1]:]
+                file.write(config_text)
+                file.close()
+
+            # found the correct group and did everything that needed to be done, no need to look further
+            break
+
+
+def remove_artist_from_group(artist_tuple, group):
+    """
+    Removes the artist specified in artist_tuple from the group by erasing the entry from the playlist_and_artist.txt
+    file
+
+    :param artist_tuple:
+    :type artist_tuple: tuple[str, str]
+    :param group:
+    :type group: Group
+    """
+    with open("playlists_and_artists.txt", "r") as file:
+        config_text = "".join(file.readlines())  # concatenates every line into a one single string
+        file.close()
+
+    for match in re.finditer(pattern=_GROUP_RE, string=config_text):
+        # find the correct group
+        if match.group("GROUP_NAME") == group.get_group_name():
+            # read the group's current artists by getting the beginning and end of the RE's subgroup "ARTISTS"
+            span = match.span("ARTISTS")  # returns a tuple
+            current_artists = config_text[span[0]: span[1]]
+
+            # remove the artist
+            current_artists = current_artists.replace("\n\n\t" + artist_tuple[0] + "=" + artist_tuple[1], "")
+
+            # overwrite the old artists in the file (actually overwrite the whole file)
+            # note: I don't know how to find the correct position / line in the file with REs. That is the sole reason
+            #       I overwrite the whole file.
+            #       I know this is ineffective but the file isn't huge so it's not that big of a deal
+            with open("playlists_and_artists.txt", "w") as file:
+                config_text = config_text[:span[0]] + current_artists + config_text[span[1]:]
+                file.write(config_text)
+                file.close()
+
+            # found the correct group and did everything that needed to be done, no need to look further
+            break

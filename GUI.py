@@ -33,6 +33,9 @@ def get_group_id_from_name(group_name):
 
     Group names are constructed like this:
         ``[str(group.get_group_id()) + ": " + group.get_group_name() for group in groups]``
+
+    :param group_name: the group's name format 'id: group_name' (there is a space after the ':')
+    :type group_name: str
     """
     # group name is of format <id>: <group_name>    (there is a space after the ":")
     return int(group_name.split(":")[0])
@@ -494,15 +497,15 @@ while True:
 
         # find the id of the currently selected group and read the group's meta data
         # the loop will always find the correct corresponding element
+        rem_win_playlist_names_and_uris = []
+        rem_win_artist_names_and_uris = []
         for i in range(len(group_names)):
             if groups[i].get_group_id() == get_group_id_from_name(values["-ComboBox-"]):
                 rem_win_playlist_names_and_uris = groups[i].get_playlist_tuples()
                 rem_win_artist_names_and_uris = groups[i].get_artist_tuples()
                 break
 
-        # TODO: the value is unassigned, there probably is an error in the get_group_id_from_name method
         playlist_names_only = [playlist_tuple[0] for playlist_tuple in rem_win_playlist_names_and_uris]
-
         artist_names_only = [artist_tuple[0] for artist_tuple in rem_win_artist_names_and_uris]
 
         # layout of the window that opens when the "Remove" button is pressed
@@ -511,12 +514,14 @@ while True:
         column1 = [
             [sg.Text("Playlists")],
             [sg.Listbox(values=playlist_names_only, size=(50, 10),
-                        select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE)]
+                        select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE,
+                        key="-RemWindowPlaylistListbox-")]
         ]
         column2 = [
             [sg.Text("Artists")],
             [sg.Listbox(values=artist_names_only, size=(50, 10),
-                        select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE)]
+                        select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE,
+                        key="-RemWindowArtistListbox-")]
         ]
 
         layout_remove_window = [
@@ -524,7 +529,7 @@ while True:
             [sg.Checkbox("Show Spotify URI", key="-UriCheckbox-", size=(30, 2))],
             [sg.Column(vertical_scroll_only=True, layout=column1),
              sg.Column(vertical_scroll_only=True, layout=column2)],
-            [sg.Button("Remove Selected", size=(30, 2)), sg.Button("Go Back", size=(30, 2))]
+            [sg.Button("Remove Selected", size=(15, 1)), sg.Button("Go Back", size=(15, 1))]
         ]
 
         window_remove = sg.Window("What\'s new in Spotify", layout_remove_window)
@@ -532,6 +537,32 @@ while True:
         event_remove, values_remove = window_remove.read()
         while True:
             if event_remove == sg.WINDOW_CLOSED or event_remove == "Go Back":
+                break
+
+            if event_remove == "Remove Selected":
+                # get the indices of the selected entries
+                p_indices_to_remove = window_remove["-RemWindowPlaylistListbox-"].get_indexes()
+                a_indices_to_remove = window_remove["-RemWindowArtistListbox-"].get_indexes()
+
+                for i in a_indices_to_remove:
+                    IO_operations.remove_artist_from_group(artist_tuple=rem_win_artist_names_and_uris[i],
+                                                           group=groups[current_group_id])
+                    print("removed: " + rem_win_artist_names_and_uris[i][0])
+
+                for i in p_indices_to_remove:
+                    IO_operations.remove_playlist_from_group(playlist_tuple=rem_win_playlist_names_and_uris[i],
+                                                             group=groups[current_group_id])
+                    print("removed: " + rem_win_playlist_names_and_uris[i][0])
+
+                sg.popup("Are you sure you want to remove the selected playlists and artists? \n"
+                         "You Selected: \n"
+                         "\n"
+                         "PLAYLISTS: \n"
+                         "temp \n"
+                         "\n"
+                         "ARTISTS: \n"
+                         "temp")
+                update_main_window()
                 break
 
         # close the input window and unfreeze the main window
