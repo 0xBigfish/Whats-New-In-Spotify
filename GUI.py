@@ -406,6 +406,17 @@ while True:
             [sg.Text("Add playlist or artist to the current group:", font="default 16 bold")],
             [sg.Text("")],
             [sg.Text("Playlist / artist name: ", size=(20, 1)), sg.Input(size=(40, 1), key="-AddWindowName-")],
+            [sg.Text("")],  # blank line
+            [sg.Text("Enter the Spotify URI of the playlist or artist below. \n"
+                     "\n"
+                     "In order to get the playlist's Spotify URI, go to Spotify, open the playlist and click the "
+                     "three dots next to the 'Play' button.\n"
+                     "A menu will open where you select 'Share' and click"
+                     " 'Copy Spotify URI'. Paste the copied URI into the box below.\n"
+                     "\n"
+                     "To get an artist's URI navigate to the artist's page, where their top songs and every release "
+                     "is listed, and click the three dots \n"
+                     "next to the artist's name there.")],
             [sg.Text("Spotify URI: ", size=(20, 1)), sg.Input(size=(40, 1), key="-AddWindowURI-")],
             [sg.Text("")],
             [sg.Button("Confirm", size=(10, 1))]
@@ -437,8 +448,14 @@ while True:
 
                 # if the user entered a valid ARTIST uri, add the artist to the group
                 elif URI_operations.is_artist_uri(values_add["-AddWindowURI-"]):
-                    # TODO: Implement this button (add_artist_to_group() method still missing)
-                    sg.Popup("Currently not implemented")
+                    IO_operations.add_artist_to_group(
+                        a_tuple=(values_add["-AddWindowName-"], values_add["-AddWindowURI-"]),
+                        group=groups[current_group_id]
+                    )
+                    sg.Popup("Entry successfully added!")
+
+                    # update the whole window to show the newly added playlist / artist
+                    update_main_window()
                     break
 
                 # if the user entered a valid PLAYLIST uri, add the playlist to the group

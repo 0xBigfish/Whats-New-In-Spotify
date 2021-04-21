@@ -479,10 +479,11 @@ def get_date_from_latest_con_file(uri) -> date:
 
 def add_playlist_to_group(p_tuple, group):
     """
+    Add the playlist specified in p_tuple to the group by writing it to the playlists_and_artists.txt file
 
-    :param p_tuple:
+    :param p_tuple: a tuple (playlist_name, playlist_URI)
     :type p_tuple: tuple[str,str]
-    :param group:
+    :param group: the group object that the playlist will be added to
     :type group: Group
     """
     with open("playlists_and_artists.txt", "r") as file:
@@ -506,6 +507,43 @@ def add_playlist_to_group(p_tuple, group):
             #       I know this is ineffective but the file isn't huge so it's not that big of a deal
             with open("playlists_and_artists.txt", "w") as file:
                 config_text = config_text[:span[0]] + current_playlists + config_text[span[1]:]
+                file.write(config_text)
+                file.close()
+
+            # found the correct group and did everything that needed to be done, no need to look further
+            break
+
+
+def add_artist_to_group(a_tuple, group):
+    """
+    Add the artist specified in a_tuple to the group by writing them to the playlists_and_artists.txt file
+
+    :param a_tuple: a tuple (artist_name, artist_URI)
+    :type a_tuple: tuple[str,str]
+    :param group: the group object that the artist will be added to
+    :type group: Group
+    """
+    with open("playlists_and_artists.txt", "r") as file:
+        config_text = "".join(file.readlines())  # concatenates every line into a one single string
+        file.close()
+
+    for match in re.finditer(pattern=_GROUP_RE, string=config_text):
+        # find the correct group
+        if match.group("GROUP_NAME") == group.get_group_name():
+
+            # read the group's current artists by getting the beginning and end of the RE's subgroup "ARTISTS"
+            span = match.span("ARTISTS")  # returns a tuple
+            current_artists = config_text[span[0]: span[1]]
+
+            # append the new artist
+            current_artists += "\n\n\t" + a_tuple[0] + "=" + a_tuple[1]
+
+            # overwrite the old artists in the file (actually overwrite the whole file)
+            # note: I don't know how to find the correct position / line in the file with REs. That is the sole reason
+            #       I overwrite the whole file.
+            #       I know this is ineffective but the file isn't huge so it's not that big of a deal
+            with open("playlists_and_artists.txt", "w") as file:
+                config_text = config_text[:span[0]] + current_artists + config_text[span[1]:]
                 file.write(config_text)
                 file.close()
 
