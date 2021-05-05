@@ -2,6 +2,22 @@ import re
 
 import IO_operations
 
+# ------------------------------------------------ Regular Expressions ------------------------------------------------
+#
+#                   Visit https://regex101.com/ for a graphical explanation of what a given RE does
+#                                      (ensure to choose Python for RE semantic)
+#
+
+# a link has the following structure:
+#           https://open.spotify.com/<type>/<id>?si=<some_parameter_id>
+#
+# regular expression to check validity and extract information from the link ('\' is the escape character)
+# the RE has the named groups 'type' and 'id'
+# type can be 'playlist', 'artist', 'track' or 'episode' (for podcast episodes)
+# A link has the format
+#         https://open.spotify.com/<type>/<id>?si=<some_parameter_id>
+_LINK_RE = "https:\/\/open\.spotify\.com\/(?P<type>(?:playlist)|(?:artist)|(?:track)|(?:episode))\/(?P<id>\S*)\?\S*"
+
 
 def get_playlist_id_from_uri(uri):
     """
@@ -67,6 +83,7 @@ def is_playlist_uri(given_string):
         of the URI the method will return false
 
     :param given_string: the string that will be checked
+    :type given_string: str
     :return: True when the given string is a Spotify playlist URI, False when not
     """
     uri_playlist_re = IO_operations.get_playlist_re()
@@ -89,6 +106,7 @@ def is_artist_uri(given_string):
         of the URI the method will return false
 
     :param given_string: the string that will be checked
+    :type given_string: str
     :return: True when the given string is a Spotify artist URI, False when not
     """
     uri_artist_re = IO_operations.get_artist_re()
@@ -96,6 +114,26 @@ def is_artist_uri(given_string):
     # if there is a match and the match is the whole original string, the match is correct
     match = re.match(uri_artist_re, given_string)
     if match and match.group(0) == given_string:
+        return True
+    else:
+        return False
+
+
+def is_link(given_link):
+    """
+    Check whether or not a given string is a link to a spotify playlist / artist / track / episode
+
+        Attention: The string MUST NOT contain anything else than the URI.
+        For example: If there is a whitespace at the end
+        of the URI the method will return false
+
+    :param given_link: the string that will be checked
+    :type given_link: str
+    :return: True when the given link is a link to one of the above specified entities (playlist / ...), False when not
+    """
+    # if there is a match and the match is the whole original string, the match is correct
+    match = re.match(_LINK_RE, given_link)
+    if match and match.group(0) == given_link:
         return True
     else:
         return False
@@ -116,19 +154,8 @@ def transform_link_to_uri(given_link):
     :type given_link: str
     :return: the uri of the playlist or artist the link refers to
     """
-    # Visit https://regex101.com/ for a graphical explanation of what a given RE does
-    #               (ensure to choose Python for RE semantic)
-    #
-    # a link has the following structure:
-    #           https://open.spotify.com/<type>/<id>?si=<some_parameter_id>
-
-    # regular expression to check validity and extract information from the link ('\' is the escape character)
-    # the RE has the named groups 'type' and 'id'
-    # type can be 'playlist', 'artist', 'track' or 'episode' (for podcast episodes)
-    link_re = "https:\/\/open\.spotify\.com\/(?P<type>(?:playlist)|(?:artist)|(?:track)|(?:episode))\/(?P<id>\S*)\?\S*"
-
     # if there is a match and the match is the whole original string, the match is correct
-    match = re.match(link_re, given_link)
+    match = re.match(_LINK_RE, given_link)
     if match and match.group(0) == given_link:
         # transform the link to an uri
         # uri format: spotify:<type>:<id>

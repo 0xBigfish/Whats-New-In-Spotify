@@ -92,7 +92,6 @@ def generate_button_column_layout():
     """
     generated_buttons_layout = [
         [sg.Button("Run", size=(15, 1), key="-RunButton-")],
-        [sg.Button("New Group", size=(15, 1), key="-NewGroupButton-")],
         [sg.Button("Add", size=(15, 1), key="-AddButton-")],
         [sg.Button("Remove", size=(15, 1), key="-RemoveButton-")],
         [sg.Button("Bonus Features", size=(15, 1), key="-BonusFeaturesButton-")]
@@ -190,10 +189,14 @@ def generate_main_window_layout():
         [sg.Combo(values=group_names, default_value=group_names[current_group_id], font="default 16 bold",
                   readonly=True,
                   background_color=sg.theme_background_color(), text_color=sg.theme_text_color(), key="-ComboBox-",
-                  enable_events=True),
-         sg.Button("Settings", size=(15, 1))],
-        [sg.Checkbox("Show Spotify URIs", enable_events=True, key="-URICheckbox-", default=uri_checkbox_value)],
+                  enable_events=True, size=(31, 1)),
+         sg.Button("Settings", size=(15, 1))
+         ],
+        [sg.Button("New Group", size=(15, 1), key="-NewGroupButton-"),
+         sg.Button("Remove Group", size=(15, 1), key="-RemoveGroupButton-")
+         ],
         [sg.Text("", size=(10, 1))],  # blank line
+        [sg.Checkbox("Show Spotify URIs", enable_events=True, key="-URICheckbox-", default=uri_checkbox_value)],
         [sg.Column(layout=group_content_layout), sg.Column(layout=buttons_layout, vertical_alignment="top")],
         [sg.Button('Ok'), sg.Button('Quit')]]
 
@@ -344,9 +347,21 @@ while True:
                 break
 
             if event_new_group == "-CreateGroupButton-":
+                # Check if the target playlist is a link instead of a uri. If it is a link try to convert it into a uri
+                # If it's not a link, it can still be a regular uri and if that's also not the case, the other following
+                # if statements will catch it and handle it accordingly
+                if URI_operations.is_link(values_new_group["-NewGroupWindowTargetPlaylistInput-"]):
+                    # transform the input into a uri
+                    window_new_group["-NewGroupWindowTargetPlaylistInput-"].Update(
+                        value=URI_operations.transform_link_to_uri(values_new_group[
+                                                                       "-NewGroupWindowTargetPlaylistInput-"]))
+
+                    # read the window values again to reset the button press event and by that prevent and infinite loop
+                    event_new_group, values_new_group = window_new_group.read()
+
                 # Check if the target playlist is a correct spotify playlist URI. Otherwise the created group will not
                 # be recognised by the REs used to get the groups and their playlist and stuff from the file
-                if not URI_operations.is_playlist_uri(values_new_group["-NewGroupWindowTargetPlaylistInput-"]) \
+                elif not URI_operations.is_playlist_uri(values_new_group["-NewGroupWindowTargetPlaylistInput-"]) \
                         and not values_new_group["-NewGroupWindowTargetPlaylistInput-"] == "":
                     sg.PopupError("Error: The URI you entered is not a playlist URI!\n"
                                   "A playlist URI always looks "
@@ -433,8 +448,19 @@ while True:
                 break
 
             if event_add == "Confirm":
+                # Check if the input is a link instead of a uri. If it is a link try to convert it into a uri
+                # If it's not a link, it can still be a regular uri and if that's also not the case, the other following
+                # if statements will catch it and handle it accordingly
+                if URI_operations.is_link(values_add["-AddWindowURI-"]):
+                    # transform the input into a uri
+                    window_add["-AddWindowURI-"].Update(
+                        value=URI_operations.transform_link_to_uri(values_add["-AddWindowURI-"]))
+
+                    # read the window values again to reset the button press event and by that prevent and infinite loop
+                    event_add, values_add = window_add.read()
+
                 # an error popup is shown if the user doesn't enter a name for the playlist / artist
-                if values_add["-AddWindowName-"] == "":
+                elif values_add["-AddWindowName-"] == "":
                     sg.PopupError("Error: You have not entered a value in the 'Playlist / artist name' field!\n"
                                   "\n"
                                   "The field must NOT be emtpy!")
@@ -554,6 +580,7 @@ while True:
                                                              group=groups[current_group_id])
                     print("removed: " + rem_win_playlist_names_and_uris[i][0])
 
+                # TODO: replace temp with the actual entries that will be removed
                 sg.popup("Are you sure you want to remove the selected playlists and artists? \n"
                          "You Selected: \n"
                          "\n"
