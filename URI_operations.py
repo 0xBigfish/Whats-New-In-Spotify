@@ -71,6 +71,7 @@ def is_playlist_uri(given_string):
     """
     uri_playlist_re = IO_operations.get_playlist_re()
 
+    # if there is a match and the match is the whole original string, the match is correct
     match = re.match(uri_playlist_re, given_string)
     if match and match.group(0) == given_string:
         return True
@@ -92,8 +93,47 @@ def is_artist_uri(given_string):
     """
     uri_artist_re = IO_operations.get_artist_re()
 
+    # if there is a match and the match is the whole original string, the match is correct
     match = re.match(uri_artist_re, given_string)
     if match and match.group(0) == given_string:
         return True
     else:
         return False
+
+
+def transform_link_to_uri(given_link):
+    """
+    Transforms a spotify link to a uri. A link has the format
+        https://open.spotify.com/<type>/<id>?si=<some_parameter_id>
+
+
+    Current spotify desktop version 1.1.58.820.g2ae50076-a offers a 'copy link to playlist' and '... to artist' instead
+    of 'copy playlist uri'. To get the uri one has to hold the 'alt' key when clicking the 'copy link' button.
+
+    In order to offer flexibility this methods transformed this copied link into a regular spotify uri
+
+    :param given_link: the link to the playlist or artist
+    :type given_link: str
+    :return: the uri of the playlist or artist the link refers to
+    """
+    # Visit https://regex101.com/ for a graphical explanation of what a given RE does
+    #               (ensure to choose Python for RE semantic)
+    #
+    # a link has the following structure:
+    #           https://open.spotify.com/<type>/<id>?si=<some_parameter_id>
+
+    # regular expression to check validity and extract information from the link ('\' is the escape character)
+    # the RE has the named groups 'type' and 'id'
+    # type can be 'playlist', 'artist', 'track' or 'episode' (for podcast episodes)
+    link_re = "https:\/\/open\.spotify\.com\/(?P<type>(?:playlist)|(?:artist)|(?:track)|(?:episode))\/(?P<id>\S*)\?\S*"
+
+    # if there is a match and the match is the whole original string, the match is correct
+    match = re.match(link_re, given_link)
+    if match and match.group(0) == given_link:
+        # transform the link to an uri
+        # uri format: spotify:<type>:<id>
+        uri = "spotify:" + match.group('type') + ":" + match.group('id')
+        return uri
+
+    else:
+        return None
