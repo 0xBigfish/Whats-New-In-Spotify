@@ -141,7 +141,7 @@ def update_main_window(curr_group_id=None):
 
     # update data
     update_groups_data()
-    if not curr_group_id:
+    if curr_group_id is None:
         current_group_id = get_group_id_from_name(values["-ComboBox-"])
     else:
         current_group_id = curr_group_id
