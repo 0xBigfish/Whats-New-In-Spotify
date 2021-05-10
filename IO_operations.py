@@ -155,10 +155,10 @@ def read_groups_from_file():
 
 def save_group_to_file(group):
     """
-    Saves a group to the playlist_and_artist.txt file.
+    Saves a group to the playlists_and_artists.txt file.
 
     :param group: the group that should be saved to the file
-    :return:
+    :type group: Group
     """
     # 'a' means append, new lines will be added to the end of the file
     with open("playlists_and_artists.txt", "a") as file:
@@ -184,6 +184,36 @@ def save_group_to_file(group):
         file.write("}\n")
 
         file.close()
+
+
+def remove_group_from_file(group):
+    """
+    Remove a group from the playlists_and_artists.txt file
+
+    :param group: the group that will be removed
+    :type group: Group
+    """
+    with open("playlists_and_artists.txt", "r") as file:
+        config_text = "".join(file.readlines())  # concatenates every line into one single string
+        file.close()
+
+    for match in re.finditer(pattern=_GROUP_RE, string=config_text):
+        # find the correct group
+        if match.group("GROUP_NAME") == group.get_group_name():
+            # get beginning and the end of the group entry in the file
+            span = match.span(0)  # returns a tuple; 0 represents the full match, not just a group inside the match
+
+            # overwrite the whole file with its' original content, but without the group that should be removed
+            # note: I don't know how to find the correct position / line in the file with REs. That is the sole reason
+            #       I overwrite the whole file.
+            #       I know this is ineffective but the file isn't huge so it's not that big of a deal
+            with open("playlists_and_artists.txt", "w") as file:
+                config_text = config_text[:span[0]] + config_text[span[1]:]  # leave out the matched group
+                file.write(config_text)
+                file.close()
+
+            # found the correct group and did everything that needed to be done, no need to look further
+            break
 
 
 def safe_uri_content_to_hard_drive(sp, uri):
@@ -563,7 +593,7 @@ def remove_playlist_from_group(playlist_tuple, group):
         :type group: Group
         """
     with open("playlists_and_artists.txt", "r") as file:
-        config_text = "".join(file.readlines())  # concatenates every line into a one single string
+        config_text = "".join(file.readlines())  # concatenates every line into one single string
         file.close()
 
     for match in re.finditer(pattern=_GROUP_RE, string=config_text):

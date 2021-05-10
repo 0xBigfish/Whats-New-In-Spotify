@@ -119,7 +119,7 @@ def update_groups_data():
     group_names = [str(group.get_group_id()) + ": " + group.get_group_name() for group in groups]
 
 
-def update_main_window():
+def update_main_window(curr_group_id=None):
     """
     Update the whole main window. This method is used when any group information that is shown in the
     group_content_layout column elements is altered:
@@ -132,13 +132,19 @@ def update_main_window():
     This method basically creates a new window and closes the old one. The PySimpleGUI creator said in an issue
     on github (can't remember the exact issue ID right now) that creating a new window was the best solution to this
     problem.
+
+    :param curr_group_id: manually set current group id, otherwise it will be read from the main window's combo box
+    :type curr_group_id: int
     """
     # to alter variables outside of the scope of this method the 'global' identifier must be used
     global current_group_id, group_content_layout, buttons_layout, window
 
     # update data
     update_groups_data()
-    current_group_id = get_group_id_from_name(values["-ComboBox-"])
+    if not curr_group_id:
+        current_group_id = get_group_id_from_name(values["-ComboBox-"])
+    else:
+        current_group_id = curr_group_id
 
     # create new layouts
     group_content_layout = generate_group_content_layout(current_group_id)
@@ -415,6 +421,63 @@ while True:
         window_new_group.close()
         window.force_focus()
 
+    # when "Remove Group" button is pressed, open an input window
+    if event == "-RemoveGroupButton-":
+        window.disable()  # freeze the main window until the user has made their input
+
+        # layout of the window that opens when the "Remove Group" button is pressed
+        # the column contains a listbox, where the user can select multiple entries which will then be deleted from the
+        # playlist_and_artist.txt file
+        rem_group_win_column1 = [
+            [sg.Text("Groups")],
+            [sg.Listbox(values=group_names, size=(50, 10),
+                        select_mode=sg.LISTBOX_SELECT_MODE_SINGLE,
+                        background_color=sg.theme_background_color(),
+                        text_color=sg.theme_text_color(),
+                        key="-RemGroupWindowsListbox-")]
+        ]
+
+        layout_rem_group_window = [
+            [sg.Text("Delete group from file", font="Default 16 bold")],
+            [sg.Text("Select a group to delete", size=(30, 1))],
+            [sg.Column(vertical_scroll_only=True, layout=rem_group_win_column1)],
+            [sg.Button("Remove Selected", size=(15, 1)), sg.Button("Go Back", size=(15, 1))]
+        ]
+
+        window_remove_group = sg.Window("What\'s new in Spotify", layout_rem_group_window)
+
+        event_rem_group, values_rem_group = window_remove_group.read()
+        while True:
+            if event_rem_group == sg.WINDOW_CLOSED or event_rem_group == "Go Back":
+                break
+
+            if event_rem_group == "Remove Selected":
+                # singular, because the listbox mode is Single Select
+                group_id_to_remove = window_remove_group["-RemGroupWindowsListbox-"].get_indexes()[0]
+
+                IO_operations.remove_group_from_file(groups[group_id_to_remove])
+
+                sg.popup("Are you sure you want to remove the selected group? \n"
+                         "You Selected: \n"
+                         "\n"
+                         "\n")
+
+                # when updating the window via update_main_windows() the current_group_id is set by reading the
+                # currently selected group in the main window's combo box. Manually set the current_group_id to 0
+                # to prevent index out of bounds when the group that is currently selected in the combo box gets
+                # removed.
+                if current_group_id == group_id_to_remove:
+                    update_main_window(curr_group_id=0)
+                else:
+                    update_main_window()
+
+                break
+
+        # close the input window and unfreeze the main window
+        window.enable()
+        window_remove_group.close()
+        window.force_focus()
+
     # when "Add" button is pressed, open an input window
     if event == "-AddButton-":
         window.disable()  # freeze the main window until the user has made their input
@@ -422,7 +485,6 @@ while True:
         # layout of the window that open when the "Add" button is pressed
         layout_add_window = [
             [sg.Text("Add playlist or artist to the current group:", font="default 16 bold")],
-            [sg.Text("")],
             [sg.Text("Playlist / artist name: ", size=(20, 1)), sg.Input(size=(40, 1), key="-AddWindowName-")],
             [sg.Text("")],  # blank line
             [sg.Text("Enter the Spotify URI of the playlist or artist below. \n"
@@ -541,18 +603,23 @@ while True:
             [sg.Text("Playlists")],
             [sg.Listbox(values=playlist_names_only, size=(50, 10),
                         select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE,
+                        background_color=sg.theme_background_color(),
+                        text_color=sg.theme_text_color(),
                         key="-RemWindowPlaylistListbox-")]
         ]
         column2 = [
             [sg.Text("Artists")],
             [sg.Listbox(values=artist_names_only, size=(50, 10),
                         select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE,
+                        background_color=sg.theme_background_color(),
+                        text_color=sg.theme_text_color(),
                         key="-RemWindowArtistListbox-")]
         ]
 
         layout_remove_window = [
+            [sg.Text("Remove from the current group", font="Default 16 bold")],
             [sg.Text("Select playlists and artist to be removed", size=(30, 1))],
-            [sg.Checkbox("Show Spotify URI", key="-UriCheckbox-", size=(30, 2))],
+            [sg.Checkbox("Show Spotify URI", key="-RemWindowUriCheckbox-", size=(30, 2))],
             [sg.Column(vertical_scroll_only=True, layout=column1),
              sg.Column(vertical_scroll_only=True, layout=column2)],
             [sg.Button("Remove Selected", size=(15, 1)), sg.Button("Go Back", size=(15, 1))]
@@ -564,6 +631,10 @@ while True:
         while True:
             if event_remove == sg.WINDOW_CLOSED or event_remove == "Go Back":
                 break
+
+            if event_remove == "-RemWindowUriCheckbox-":
+                # TODO: show URIs
+                pass
 
             if event_remove == "Remove Selected":
                 # get the indices of the selected entries
