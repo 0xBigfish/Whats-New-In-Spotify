@@ -143,16 +143,20 @@ def print_playlist_changes(sp, p_uri):
 
 def get_all_songs_from_playlist(sp, p_uri):
     """
-    returns a list containing the song uri of each song in the playlist
+    Returns a list of dictionaries holding each songs uri, name and artist(s)
 
-    if no content file is found for the playlist, a new content file is created.
+    Dictionary fields:
+        - "uri" : str
+        - "name" : str
+        - "artists" : list(str)
+
+    **If no content file is found for the playlist, a new content file is created.**
 
     :param p_uri: the spotify uri of the playlist
     :param sp: the Spotify API client
     :type p_uri: str
     :type sp: spotipy.Spotify
-    :raise TypeError: the content file is not a json file.
-    :return a list[str] of every song uri in the playlist
+    :return: a list of dictionaries each representing a song in the playlist
     """
     # results is a json file
     # object{7}:
@@ -206,27 +210,41 @@ def get_all_songs_from_playlist(sp, p_uri):
 
     # get the playlists tracks
     latest_tracks = results_dict["items"]
-    if latest_tracks:
-        return [new_track["track"]["uri"] for new_track in latest_tracks if new_track["track"] is not None]
-    else:
-        return []
+
+    # data is a list of dictionaries, each representing a song.
+    data = []
+    for n, track in enumerate(latest_tracks):
+        data.insert(n, {"uri": latest_tracks[n]["track"]["uri"],
+                        "name": latest_tracks[n]["track"]["name"],
+                        "artists": [art["name"] for art in latest_tracks[n]["track"]["artists"]]
+                        })
+
+    return data
 
 
-def get_new_songs_in_playlist(sp, p_uri, since_date=None):
+def get_new_songs_in_playlist(sp, p_uri, since_date=None, as_dict=False):
     """
-    songs that have newly been added to this playlist will be returned as a list of song URIs
+    Songs that have newly been added to this playlist will be returned as a list of song URIs. Alternatively a list of
+    dictionaries can be returned using the ``as_dict`` flag, which are holding each songs uri, name and artist(s)
 
-    if no content file is found for the playlist, a new content file is created.
+    Dictionary fields:
+        - "uri" : str
+        - "name" : str
+        - "artists" : list(str)
+
+    **If no content file is found for the playlist, a new content file is created.**
 
     :param p_uri: the spotify uri of the playlist
     :param sp: the Spotify API client
     :param since_date: a date
+    :param as_dict: flag to return a dictionary with more information about a song
     :type p_uri: str
     :type sp: spotipy.Spotify
     :type since_date: date
-    :return: a list containing the uris of all new songs in the playlist
+    :type as_dict: bool
+    :return: an empty list when no content file is found, a list of uris or a list of dictionaries
     """
-    # read old playlist content from file
+    # search for a content file
     if since_date is None:
         latest_content_file = find_latest_content_file(p_uri)
     else:
@@ -235,21 +253,29 @@ def get_new_songs_in_playlist(sp, p_uri, since_date=None):
     # if a content file exists for the uri:
     if latest_content_file:
 
-        # get the uris of the songs currently in the playlist
-        song_uris_in_playlist = get_all_songs_from_playlist(sp, p_uri)
-
+        # read old playlist data from file
         with open(latest_content_file, "r") as old_track_file:
             old_results = json.load(old_track_file)
             old_tracks_uris = [song_data["track"]["uri"]
                                for song_data in old_results["items"] if song_data["track"] is not None]
 
-        # check the playlist for new songs by check whether they were already in the old content_file or not
-        new_songs = [song for song in song_uris_in_playlist if not old_tracks_uris.__contains__(song)]
+        # get the uri, name and artist(s) of every song currently in the playlist
+        # entries of song data: {"uri" : <song_uri>,
+        #                        "name": <song_name>,
+        #                        "artists: <song_artist(s)>}
+        song_data = get_all_songs_from_playlist(sp, p_uri)
+
+        # check the playlist for new songs by checking whether their uri was already in the old content_file
+        new_songs = [data for data in song_data if not old_tracks_uris.__contains__(data["uri"])]
 
         # remove duplicate entries using list comprehension
-        song_uris = [s for n, s in enumerate(new_songs) if s not in new_songs[:n]]
+        no_duplicates = [s for n, s in enumerate(new_songs) if s not in new_songs[:n]]
 
-        return song_uris
+        if as_dict:
+            return no_duplicates
+        else:
+            # only return the uris of the new songs
+            return [elem["uri"] for elem in no_duplicates]
 
     else:
         # if there are no records of the playlist yet, create the first record

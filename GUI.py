@@ -251,11 +251,18 @@ while True:
                 for p_tuple in groups[current_group_id].get_playlist_tuples():
 
                     # list new songs in this layout and later add it to a column to assign a fixed size to it
-                    # TODO: show song name and artist instead of URI
-                    presentation_window_songs_layout \
-                        = [[sg.Text(song)] for song in get_new_songs_in_playlist(sp,
-                                                                                 p_tuple[1],
-                                                                                 values_run["-RunWindowDateInput-"])]
+                    presentation_window_songs = []
+                    for song_data in get_new_songs_in_playlist(sp,
+                                                               p_uri=p_tuple[1],
+                                                               since_date=values_run["-RunWindowDateInput-"],
+                                                               as_dict=True):
+                        # song_data["artists"] is a list of strings
+                        # ", ".join(<list of str>) concat the list of strings into a single string separated by commas
+                        # ", ".join(["ab", "c", "d"]) = 'ab, c, d'
+                        presentation_window_songs.append(song_data["name"] + "  -  " + ", ".join(song_data["artists"]))
+                    # finish the layout
+                    presentation_window_songs_layout = [[sg.Text(song)] for song in presentation_window_songs]
+
                     # if there are no new songs, show "no new songs" in the presentation window
                     if not presentation_window_songs_layout:
                         date_str = get_date_from_latest_con_file(p_tuple[1]).strftime("%A %Y-%m-%d")
@@ -457,6 +464,7 @@ while True:
 
                 IO_operations.remove_group_from_file(groups[group_id_to_remove])
 
+                # TODO: change  pop up to be able to cancel the removal, currently it serves no purpose
                 sg.popup("Are you sure you want to remove the selected group? \n"
                          "You Selected: \n"
                          "\n"
