@@ -201,6 +201,7 @@ def generate_main_window_layout():
         [sg.Button("New Group", size=(15, 1), key="-NewGroupButton-"),
          sg.Button("Remove Group", size=(15, 1), key="-RemoveGroupButton-")
          ],
+        [sg.Text("Add new songs to: " + groups[current_group_id].get_target_playlist())],
         [sg.Text("", size=(10, 1))],  # blank line
         [sg.Checkbox("Show Spotify URIs", enable_events=True, key="-URICheckbox-", default=uri_checkbox_value)],
         [sg.Column(layout=group_content_layout), sg.Column(layout=buttons_layout, vertical_alignment="top")],
@@ -227,6 +228,9 @@ while True:
 
         # layout of the window that opens when the "Add" button is pressed
         layout_run_window = [
+            [sg.Text("Run update on current group:", font="default 16 bold")],
+            [sg.Text("Add newly added songs from playlists in this group and newly released songs by artists in this "
+                     "group to the target playlist")],
             [sg.Checkbox("Safe playlist content to hard drive", key="-RunWindowSaveCheck-", default=True)],
             [sg.Checkbox("Add new songs to my playlist(s)", key="-RunWindowAddCheck-")],
             [sg.Checkbox("Remove / clear every songs from playlist before adding new songs",
@@ -619,7 +623,7 @@ while True:
         # the columns contain listboxs, where the user can select multiple entries which will then be removed from the
         # release radar
         column1 = [
-            [sg.Text("Playlists")],
+            [sg.Text("Playlists", font="Default 10 bold")],  # 10 APPEARS to be the default font size, I'm not sure tho
             [sg.Listbox(values=playlist_names_only, size=(50, 10),
                         select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE,
                         background_color=sg.theme_background_color(),
@@ -627,7 +631,7 @@ while True:
                         key="-RemWindowPlaylistListbox-")]
         ]
         column2 = [
-            [sg.Text("Artists")],
+            [sg.Text("Artists", font="Default 10 bold")],  # 10 APPEARS to be the default font size, I'm not sure tho
             [sg.Listbox(values=artist_names_only, size=(50, 10),
                         select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE,
                         background_color=sg.theme_background_color(),
@@ -638,7 +642,6 @@ while True:
         layout_remove_window = [
             [sg.Text("Remove from the current group", font="Default 16 bold")],
             [sg.Text("Select playlists and artist to be removed", size=(30, 1))],
-            [sg.Checkbox("Show Spotify URI", key="-RemWindowUriCheckbox-", size=(30, 2))],
             [sg.Column(vertical_scroll_only=True, layout=column1),
              sg.Column(vertical_scroll_only=True, layout=column2)],
             [sg.Button("Remove Selected", size=(15, 1)), sg.Button("Go Back", size=(15, 1))]
@@ -650,10 +653,6 @@ while True:
         while True:
             if event_remove == sg.WINDOW_CLOSED or event_remove == "Go Back":
                 break
-
-            if event_remove == "-RemWindowUriCheckbox-":
-                # TODO: show URIs
-                pass
 
             if event_remove == "Remove Selected":
                 # get the indices of the selected entries
