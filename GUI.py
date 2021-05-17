@@ -462,13 +462,24 @@ while True:
                 # singular, because the listbox mode is Single Select
                 group_id_to_remove = window_remove_group["-RemGroupWindowsListbox-"].get_indexes()[0]
 
-                IO_operations.remove_group_from_file(groups[group_id_to_remove])
+                # open popup asking for confirmation before deleting selected group
+                rem_group_conf_popup = sg.popup_ok_cancel(
+                    "Are you sure you want to remove the selected group? \n"
+                    "\n"
+                    "THIS CAN NOT BE UNDONE. \n"
+                    "Better double check before deleting, otherwise you might have to add every"
+                    "playlist and artist one by one to a new group again!!"
+                    "\n \n"
+                    "You Selected: \n"
+                    "\n" +
+                    groups[group_id_to_remove].get_group_name() +
+                    "\n")
 
-                # TODO: change  pop up to be able to cancel the removal, currently it serves no purpose
-                sg.popup("Are you sure you want to remove the selected group? \n"
-                         "You Selected: \n"
-                         "\n"
-                         "\n")
+                # user has to confirm their choice
+                if rem_group_conf_popup == "OK":
+                    IO_operations.remove_group_from_file(groups[group_id_to_remove])
+                else:
+                    break
 
                 # when updating the window via update_main_windows() the current_group_id is set by reading the
                 # currently selected group in the main window's combo box. Manually set the current_group_id to 0
@@ -649,25 +660,31 @@ while True:
                 p_indices_to_remove = window_remove["-RemWindowPlaylistListbox-"].get_indexes()
                 a_indices_to_remove = window_remove["-RemWindowArtistListbox-"].get_indexes()
 
-                for i in a_indices_to_remove:
-                    IO_operations.remove_artist_from_group(artist_tuple=rem_win_artist_names_and_uris[i],
-                                                           group=groups[current_group_id])
-                    print("removed: " + rem_win_artist_names_and_uris[i][0])
+                # open a popup asking for confirmation before deleting selected playlists and artists
+                rem_window_popup = sg.popup_ok_cancel(
+                    "Are you sure you want to remove the selected playlists and "
+                    "artists? THIS CAN NOT BE UNDONE \n"
+                    "You Selected: \n"
+                    "\n"
+                    "PLAYLISTS: \n" +
+                    " \n".join([tup[0] for tup in [rem_win_playlist_names_and_uris[i] for i in p_indices_to_remove]]) +
+                    "\n \n" +
+                    "ARTISTS: \n" +
+                    " \n".join([tup[0] for tup in [rem_win_artist_names_and_uris[i] for i in a_indices_to_remove]]) +
+                    "\n")
 
-                for i in p_indices_to_remove:
-                    IO_operations.remove_playlist_from_group(playlist_tuple=rem_win_playlist_names_and_uris[i],
-                                                             group=groups[current_group_id])
-                    print("removed: " + rem_win_playlist_names_and_uris[i][0])
+                # user has to confirm their choice
+                if rem_window_popup == "OK":
+                    for i in p_indices_to_remove:
+                        IO_operations.remove_playlist_from_group(playlist_tuple=rem_win_playlist_names_and_uris[i],
+                                                                 group=groups[current_group_id])
+                        print("removed: " + rem_win_playlist_names_and_uris[i][0])
 
-                # TODO: replace temp with the actual entries that will be removed
-                sg.popup("Are you sure you want to remove the selected playlists and artists? \n"
-                         "You Selected: \n"
-                         "\n"
-                         "PLAYLISTS: \n"
-                         "temp \n"
-                         "\n"
-                         "ARTISTS: \n"
-                         "temp")
+                    for i in a_indices_to_remove:
+                        IO_operations.remove_artist_from_group(artist_tuple=rem_win_artist_names_and_uris[i],
+                                                               group=groups[current_group_id])
+                        print("removed: " + rem_win_artist_names_and_uris[i][0])
+
                 update_main_window()
                 break
 
