@@ -1,7 +1,8 @@
 # sg is the default PySimpleGUI naming convention for the import
-import datetime
-
 # noinspection PyPep8Naming
+import datetime
+import json
+
 import PySimpleGUI as sg
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -25,6 +26,22 @@ from Playlist_operations import get_new_songs_in_playlist
 #       PySimpleGUI enforces that each layout may only be used ONCE, so if a layout has been used in an element,
 # it can not be used in another window or other element again. Fix: just assign the same values to new
 # variables / layouts or use methods to generate the layouts
+
+def set_settings(dic):
+    """
+    Overwrite settings in the setting.json file
+
+    :param dic:
+    :type dic: dict
+    """
+    with open("settings.json", "r") as file:
+        data = json.load(file)
+
+    for key in dic:
+        data[key] = dic[key]
+
+    with open("settings.json", "w") as file:
+        json.dump(data, file)
 
 
 def get_group_id_from_name(group_name):
@@ -75,10 +92,10 @@ def generate_group_content_layout(group_id):
         ]
     else:
         generated_group_content_layout = [
-            [sg.Text("Playlist")],
-            [sg.Column(scrollable=True, layout=playlist_layout, size=(250, 250))],
-            [sg.Text("Artists")],
-            [sg.Column(scrollable=True, layout=artist_layout, size=(250, 250))]
+            [sg.Text("Playlists", font="Default 12 bold")],
+            [sg.Column(scrollable=True, layout=playlist_layout, size=(350, 250))],
+            [sg.Text("Artists", font="Default 12 bold")],
+            [sg.Column(scrollable=True, layout=artist_layout, size=(350, 250))]
         ]
 
     return generated_group_content_layout
@@ -170,13 +187,17 @@ sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope,                     
 #########################################################################################
 
 
+# read settings data from settings.json
+with open("settings.json", "r") as settings_file:
+    settings = json.load(settings_file)
+
 # the state of some elements is saved by the values. They are global, are read by the generator methods and are
 # overwritten in the event loop based on the user's input
 # for example: whether a checkbox is ticked
 # state values
 uri_checkbox_value = False
-use_frames_in_layout = True
-current_group_id = 0
+use_frames_in_layout = settings["use_frames"]
+current_group_id = settings["default_group"]
 
 # read groups from the playlist_and_artist.txt file and add each group's id to its name to archive bijective mapping
 # from group_name to group id
@@ -196,7 +217,7 @@ def generate_main_window_layout():
                   readonly=True,
                   background_color=sg.theme_background_color(), text_color=sg.theme_text_color(), key="-ComboBox-",
                   enable_events=True, size=(31, 1)),
-         sg.Button("Settings", size=(15, 1))
+         sg.Button("Settings", size=(15, 1), key="-SettingsButton-")
          ],
         [sg.Button("New Group", size=(15, 1), key="-NewGroupButton-"),
          sg.Button("Remove Group", size=(15, 1), key="-RemoveGroupButton-")
@@ -242,7 +263,7 @@ while True:
                    size=(15, 1)),
              sg.CalendarButton("Select from calender", target="-RunWindowDateInput-", format="%Y-%m-%d")],
             [sg.Text("")],  # blank line
-            [sg.Button("Run", key="-RunButtonRunWindow-", size=(15, 1))]
+            [sg.Button("Run", key="-RunButtonRunWindow-", size=(15, 1)), sg.Button("Go Back", size=(15, 1))]
         ]
         window_run = sg.Window("What\'s new in Spotify", layout_run_window)
 
@@ -330,7 +351,7 @@ while True:
                                                           song_uris=no_duplicates)
                 break
 
-            if event_run == sg.WINDOW_CLOSED:
+            if event_run in (sg.WINDOW_CLOSED, "Go Back"):
                 break
 
         window.enable()
@@ -354,13 +375,13 @@ while True:
                      " 'Copy Spotify URI'. Paste the copied URI into the box below.")],
             [sg.Text("Target playlist:"), sg.In("", size=(40, 1), key="-NewGroupWindowTargetPlaylistInput-")],
             [sg.Text("")],  # blank line
-            [sg.Button("Create Group", key="-CreateGroupButton-")]
+            [sg.Button("Create Group", key="-CreateGroupButton-", size=(15, 1)), sg.Button("Go Back", size=(15, 1))]
         ]
         window_new_group = sg.Window("What\'s new in Spotify", layout_new_group_window)
 
         event_new_group, values_new_group = window_new_group.read()
         while True:
-            if event_new_group == sg.WINDOW_CLOSED:
+            if event_new_group in (sg.WINDOW_CLOSED, "Go Back"):
                 break
 
             if event_new_group == "-CreateGroupButton-":
@@ -522,14 +543,14 @@ while True:
                      "next to the artist's name there.")],
             [sg.Text("Spotify URI: ", size=(20, 1)), sg.Input(size=(40, 1), key="-AddWindowURI-")],
             [sg.Text("")],
-            [sg.Button("Confirm", size=(10, 1))]
+            [sg.Button("Confirm", size=(15, 1)), sg.Button("Go Back", size=(15, 1))]
         ]
 
         window_add = sg.Window("What\'s new in Spotify", layout_add_window)
 
         event_add, values_add = window_add.read()
         while True:
-            if event_add == sg.WINDOW_CLOSED:
+            if event_add in (sg.WINDOW_CLOSED, "Go Back"):
                 break
 
             if event_add == "Confirm":
@@ -690,6 +711,108 @@ while True:
         # close the input window and unfreeze the main window
         window.enable()
         window_remove.close()
+        window.force_focus()
+
+    # when "Bonus Features" button is pressed, open an input window
+    if event == "-BonusFeaturesButton-":
+        sg.popup("This feature is not yet implemented. It might come with future releases of this program. \n"
+                 "\n"
+                 "If you have suggestions for features you'd like to see submit them as an issue on this project's "
+                 "github")
+
+    # when "Settings" button is pressed, open an input window
+    if event == "-SettingsButton-":
+        window.disable()  # freeze the main window until the user has made their input
+
+        layout_settings_window = [
+            [sg.Text("Settings", font="Default 16 bold")],
+            [sg.Checkbox("Show frames around group content in main window", default=use_frames_in_layout,
+                         key="-SettingsFramesCheckbox-")],
+            [sg.Text("")],  # blank line
+            [sg.Text("Set default group. This group will always be the first to be shown when running this program")],
+            [sg.Text("Default group: "),
+             sg.Combo(values=group_names, default_value=group_names[current_group_id], readonly=True,
+                      background_color=sg.theme_background_color(), text_color=sg.theme_text_color(),
+                      key="-SettingsComboBox-", size=(31, 1)),
+             ],
+            [sg.Text("")],  # blank line
+            [sg.Button("Confirm", size=(15, 1), key="-SettingsConfirmButton-"),
+             sg.Button("Go Back", size=(15, 1)),
+             sg.Text("", size=(35, 1)),
+             sg.Button("Danger Zone", size=(15, 1), button_color=("white", "#8f1000"), key="-SettingsDangerZone-")]
+        ]
+
+        window_settings = sg.Window("What\'s new in Spotify", layout_settings_window)
+
+        event_settings, values_settings = window_settings.read()
+        while True:
+            if event_settings in (sg.WINDOW_CLOSED, "Go Back"):
+                break
+
+            # when the user pressed confirm, overwrite the settings.json file with the new settings
+            if event_settings == "-SettingsConfirmButton-":
+                setting_dic = {
+                    "default_group": get_group_id_from_name(values_settings["-SettingsComboBox-"]),
+                    "use_frames": values_settings["-SettingsFramesCheckbox-"]
+                }
+
+                # save changes to the settings.json file
+                set_settings(setting_dic)
+
+                # update the main window to show possible visual changes
+                use_frames_in_layout = setting_dic["use_frames"]
+                update_main_window()
+                break
+
+            # open a window with actions that you only use when uninstalling the the program
+            if event_settings == "-SettingsDangerZone-":
+                # show a warning to the user
+                settings_danger_popup = sg.PopupOKCancel(
+                    "WARNING: In the following window you can remove the connection to Spotify and "
+                    "uninstall this program. You can also remove previously set path variables. \n"
+                    "\n"
+                    "These are NOT action you want to take when you intent to keep using this program. \n"
+                    "\n"
+                    "You can safely click 'OK', but be careful which button you press in the next window.")
+
+                # user has to confirm in order to continue
+                if settings_danger_popup == "OK":
+                    window_settings.disable()  # freeze the main window until the user has made their input
+
+                    layout_danger_zone = [
+                        [sg.Text("This button uninstalls this program. You will have to confirm your action before "
+                                 " that's happening. \n"
+                                 "You do not need to run the other buttons below, when uninstalling, all these other "
+                                 "actions are taken as well.")],
+                        [sg.Button("Uninstall (not implemented)", size=(15, 1), button_color=("white", "#8f1000"))],
+                        [sg.Text("Remove Spotify Client ID and Client Secret from \n"
+                                 "the path variable"),
+                         sg.Button("Unset path variables", size=(15, 1), button_color=("white", "#8f1000"))
+                         ],
+                        [sg.Text("")],  # blank line
+                        [sg.Button("Close", size=(15, 1))]
+                    ]
+                    window_danger_zone = sg.Window("Danger Zone", layout_danger_zone)
+
+                    event_danger_zone, values_danger_zone = window_danger_zone.read()
+                    while True:
+                        if event_danger_zone in ("Close", sg.WINDOW_CLOSED):
+                            break
+                        else:
+                            # TODO: implement buttons
+                            break
+
+                    # close the input window and unfreeze the main window
+                    window_settings.enable()
+                    window_danger_zone.close()
+                    window_settings.force_focus()
+
+                # read user input in order to prevent the confirmation pop-up from continuously appearing
+                event_settings, values_settings = window_settings.read()
+
+        # close the input window and unfreeze the main window
+        window.enable()
+        window_settings.close()
         window.force_focus()
 
     # when "Change Group" button is pressed, update the whole window.
