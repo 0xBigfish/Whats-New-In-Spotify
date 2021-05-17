@@ -396,7 +396,7 @@ def remove_all_songs_from_playlist(sp, playlist_uri):
     :type sp: spotipy.Spotify
     :type playlist_uri: str
     """
-    song_uris = get_all_songs_from_playlist(sp, playlist_uri)
+    song_uris = [song_data["uri"] for song_data in get_all_songs_from_playlist(sp, playlist_uri)]
     sp.playlist_remove_all_occurrences_of_items(get_playlist_id_from_uri(playlist_uri), song_uris)
 
 
