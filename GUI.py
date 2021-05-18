@@ -272,6 +272,9 @@ while True:
             if event_run == "-RunButtonRunWindow-":
                 songs_to_add = []
 
+                # TODO: add check for new artist releases
+                # TODO: generate songs_to_add outside the loop so the user doesnt have to click through ALL windows
+
                 # show an individual window with new songs for each playlist
                 for p_tuple in groups[current_group_id].get_playlist_tuples():
 

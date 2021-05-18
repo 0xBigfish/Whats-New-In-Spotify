@@ -246,12 +246,24 @@ def save_uri_content_to_hard_drive(sp, uri):
     if not os.path.isdir(uri_directory_path):
         os.mkdir(uri_directory_path)
 
-    # get the content of the playlist and save it into a file called <uri>_content_raw(<currentDate>).json
+    # get the content of the uri and save it into a file called <uri>_content_raw(<currentDate>).json
     file_path = os.path.join(uri_directory_path, file_name)
-    with open(file_path, "w") as file:
-        content = sp.playlist_items(playlist_id=URI_operations.get_playlist_id_from_uri(uri))
-        json.dump(content, file)
-        file.close()
+
+    if URI_operations.is_playlist_uri(uri):
+        with open(file_path, "w") as file:
+            content = sp.playlist_items(playlist_id=URI_operations.get_playlist_id_from_uri(uri))
+            json.dump(content, file)
+            file.close()
+
+    elif URI_operations.is_artist_uri(uri):
+        with open(file_path, "w") as file:
+            content = sp.artist_albums(artist_id=URI_operations.get_artist_id_from_uri(uri))
+            json.dump(content, file)
+            file.close()
+
+    # make sure to throw an error to indicate something went wrong
+    else:
+        raise ValueError("Uri is not a playlist or artist uri")
 
 
 def read_playlists_and_artists_uris_from_file():
