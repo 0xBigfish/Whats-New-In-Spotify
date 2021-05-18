@@ -10,7 +10,7 @@ from spotipy.oauth2 import SpotifyOAuth
 import IO_operations
 import Playlist_operations
 import URI_operations
-from IO_operations import get_date_from_latest_con_file
+from IO_operations import get_date_from_latest_cont_file
 from Playlist_operations import get_new_songs_in_playlist
 
 
@@ -290,7 +290,7 @@ while True:
 
                     # if there are no new songs, show "no new songs" in the presentation window
                     if not presentation_window_songs_layout:
-                        date_str = get_date_from_latest_con_file(p_tuple[1]).strftime("%A %Y-%m-%d")
+                        date_str = get_date_from_latest_cont_file(p_tuple[1]).strftime("%A %Y-%m-%d")
 
                         presentation_window_songs_layout = [
                             [sg.Text("There are no new songs since " + values_run["-RunWindowDateInput-"])],
@@ -301,7 +301,7 @@ while True:
                     # if the "save playlist content" checkbox is ticked, save the playlist content to the hard drive
                     # and tell the user that the content has been saved in the presentation window
                     if values_run["-RunWindowSaveCheck-"]:
-                        IO_operations.safe_uri_content_to_hard_drive(sp, p_tuple[1])
+                        IO_operations.save_uri_content_to_hard_drive(sp, p_tuple[1])
 
                         presentation_window_songs_layout.insert(0, [sg.Text("Playlist content saved to hard drive!")])
                         presentation_window_songs_layout.insert(1, [sg.Text("")])  # blank line

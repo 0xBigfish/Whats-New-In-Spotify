@@ -4,8 +4,7 @@ from datetime import date
 
 import spotipy
 
-from IO_operations import find_latest_content_file
-from IO_operations import safe_uri_content_to_hard_drive
+from IO_operations import find_latest_content_file, save_uri_content_to_hard_drive
 from URI_operations import *
 
 
@@ -279,7 +278,7 @@ def get_new_songs_in_playlist(sp, p_uri, since_date=None, as_dict=False):
 
     else:
         # if there are no records of the playlist yet, create the first record
-        safe_uri_content_to_hard_drive(sp, p_uri)
+        save_uri_content_to_hard_drive(sp, p_uri)
         return []
 
 

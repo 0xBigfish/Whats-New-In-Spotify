@@ -57,7 +57,7 @@ class Group(object):
 #                                      (ensure to choose Python for RE semantic)
 #
 #
-# (?P<name><subRegex>) defines a subgroup or submatch. When the main regex has a match, the substring described by
+# (?P<<name>><subRegex>) defines a subgroup or submatch. When the main regex has a match, the substring described by
 # subRegex can be easily extracted via its name using the RE's group-mechanic
 #   ATTENTION: For each match by its super-regex a subgroup can only extract one match. This means that if a group COULD
 # match multiple times, only the last match will be extractable, the previously matched will NOT be extractable
@@ -216,12 +216,12 @@ def remove_group_from_file(group):
             break
 
 
-def safe_uri_content_to_hard_drive(sp, uri):
+def save_uri_content_to_hard_drive(sp, uri):
     """
-    Saves the playlist's content to a file
+    Saves the uri's content to a file. Supports only artist and playlist uris.
 
     :param sp: the Spotify API client
-    :param uri: the spotify uri of the playlist
+    :param uri: a spotify uri of a playlist or artist
     :type sp: spotipy.Spotify
     :type uri: str
     """
@@ -230,7 +230,7 @@ def safe_uri_content_to_hard_drive(sp, uri):
     today = str(date.today())  # current format: yyyy-mm-dd
     today = today.replace("-", ".")
 
-    # rename a uri "spotify:playlist:37 ..." to "spotify_playlist_37 ..."
+    # rename a uri like "spotify:playlist:37 ..." to "spotify_playlist_37 ..."
     uri_directory_name = uri.replace(":", "_")
     file_name = uri_directory_name + "_content_raw(" + today + ").json"
 
@@ -480,7 +480,7 @@ def find_latest_content_file(uri, since_date=None):
         return None
 
 
-def get_date_from_con_file(content_file) -> date:
+def get_date_from_cont_file(content_file) -> date:
     """
     Extracts the date from the content file name and returns it as a datetime.date object
 
@@ -494,7 +494,7 @@ def get_date_from_con_file(content_file) -> date:
     return datetime.strptime(date_wrong_format.replace(".", "-"), "%Y-%m-%d")
 
 
-def get_date_from_latest_con_file(uri) -> date:
+def get_date_from_latest_cont_file(uri) -> date:
     """
     Finds the latest content file for the URI, extract the date and returns it as a datetime.date object
 
