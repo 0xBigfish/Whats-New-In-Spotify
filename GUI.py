@@ -1,8 +1,8 @@
-# sg is the default PySimpleGUI naming convention for the import
-# noinspection PyPep8Naming
 import datetime
 import json
 
+# sg is the default PySimpleGUI naming convention for the import
+# noinspection PyPep8Naming
 import PySimpleGUI as sg
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
@@ -226,7 +226,7 @@ def generate_main_window_layout():
         [sg.Text("", size=(10, 1))],  # blank line
         [sg.Checkbox("Show Spotify URIs", enable_events=True, key="-URICheckbox-", default=uri_checkbox_value)],
         [sg.Column(layout=group_content_layout), sg.Column(layout=buttons_layout, vertical_alignment="top")],
-        [sg.Button('Ok'), sg.Button('Quit')]]
+        [sg.Button("Quit", size=(15, 1))]]
 
     return generated_main_window_layout
 
@@ -239,8 +239,8 @@ window = sg.Window("What\'s new in Spotify", main_window_layout)
 # Display and interact with the Window using an Event Loop
 while True:
     event, values = window.read()
-    # See if user wants to quit or window was closed
-    if event == sg.WINDOW_CLOSED or event == 'Quit':
+    # if the window was closed
+    if event in (sg.WINDOW_CLOSED, "Quit"):
         break
 
     # when "Run" button is pressed, open an input window
@@ -729,7 +729,7 @@ while True:
             [sg.Checkbox("Show frames around group content in main window", default=use_frames_in_layout,
                          key="-SettingsFramesCheckbox-")],
             [sg.Text("")],  # blank line
-            [sg.Text("Set default group. This group will always be the first to be shown when running this program")],
+            [sg.Text("Set default group. This will be the first group you see when opening this program.")],
             [sg.Text("Default group: "),
              sg.Combo(values=group_names, default_value=group_names[current_group_id], readonly=True,
                       background_color=sg.theme_background_color(), text_color=sg.theme_text_color(),
@@ -780,15 +780,24 @@ while True:
                     window_settings.disable()  # freeze the main window until the user has made their input
 
                     layout_danger_zone = [
-                        [sg.Text("This button uninstalls this program. You will have to confirm your action before "
-                                 " that's happening. \n"
-                                 "You do not need to run the other buttons below, when uninstalling, all these other "
-                                 "actions are taken as well.")],
+                        [sg.Text("Danger Zone", font="Default 16 bold")],
+                        [sg.Text("These are NOT action you want to take when you intent to keep using this program.")],
+                        [sg.Text("")],  # blank line
+                        [sg.Text("This button uninstalls this program. You will have to confirm your \n"
+                                 "action before that's happening. \n"
+                                 "You do not need to run the other buttons below, when uninstalling, all \n"
+                                 "these other actions are taken as well.")],
                         [sg.Button("Uninstall (not implemented)", size=(15, 1), button_color=("white", "#8f1000"))],
-                        [sg.Text("Remove Spotify Client ID and Client Secret from \n"
-                                 "the path variable"),
-                         sg.Button("Unset path variables", size=(15, 1), button_color=("white", "#8f1000"))
-                         ],
+                        [sg.Text("")],  # blank line
+                        [sg.Text("Remove Spotify Client ID and Client Secret from the path variable")],
+                        [sg.Button("Unset path variables (not implemented)", size=(15, 1),
+                                   button_color=("white", "#8f1000"))],
+                        [sg.Text("")],  # blank line
+                        [sg.Text("Cut connection to Spotify. You will have to manually do this over \n"
+                                 "your browser. This button will refer you to the website where you \n"
+                                 "can do that.")],
+                        [sg.Button("Cut connection (not yet implemented)")],
+                        [sg.Text("")],  # blank line
                         [sg.Text("")],  # blank line
                         [sg.Button("Close", size=(15, 1))]
                     ]
@@ -805,6 +814,7 @@ while True:
                     # close the input window and unfreeze the main window
                     window_settings.enable()
                     window_danger_zone.close()
+                    window.force_focus()  # otherwise the main window can get lost behind a window from other apps
                     window_settings.force_focus()
 
                 # read user input in order to prevent the confirmation pop-up from continuously appearing
