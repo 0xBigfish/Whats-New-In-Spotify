@@ -249,12 +249,19 @@ def save_uri_content_to_hard_drive(sp, uri):
     # get the content of the uri and save it into a file called <uri>_content_raw(<currentDate>).json
     file_path = os.path.join(uri_directory_path, file_name)
 
+    # for playlists save the entire playlist content to the hard drive
     if URI_operations.is_playlist_uri(uri):
         with open(file_path, "w") as file:
             content = sp.playlist_items(playlist_id=URI_operations.get_playlist_id_from_uri(uri))
             json.dump(content, file)
             file.close()
 
+    # for artists save every album featuring the artist to the hard drive
+    # artists release songs in albums or as singles or they are featured on them. Their songs can also be part of a
+    # compilation.
+    # All of these are handled as 'album' by spotify (see album_type).
+    # So if an artist appears on a new album, they most likely released a new song OR one of their songs got added to
+    # a compilations. The latter shouldn't happen that often tho.
     elif URI_operations.is_artist_uri(uri):
         with open(file_path, "w") as file:
             content = sp.artist_albums(artist_id=URI_operations.get_artist_id_from_uri(uri))
@@ -427,7 +434,10 @@ def find_latest_content_file(uri, since_date=None):
     #           ...
 
     # remove ":"s from uri and replace them with "_" as ":" must not be part of filename on some OS
-    uri = uri.replace(":", "_")
+    if uri is None or uri == "":
+        return None
+    else:
+        uri = uri.replace(":", "_")
 
     # get main directory (all .py files are in the main directory)
     main_dir_path = os.path.dirname(__file__)  # returns the directory of this file

@@ -165,3 +165,43 @@ def get_all_songs_from_album(sp, alb_uri):
                         })
 
     return data
+
+
+def get_artists_songs_from_album(sp, alb_uri, art_uri):
+    """
+    Returns a list of dictionaries holding uri, name and artist(s) of each track in the album that features the artist
+    specified by ``art_uri``.
+
+    **Hint**: 'artists' in the method name represents 'artist's' and is not the plural of artists. Only pass the uri
+    of ONE artist in ``art_uri``
+
+    Dictionary fields:
+        - "uri" : str
+        - "name" : str
+        - "artists" : list(str)
+
+    **If no content file is found for the album, a new content file is created.**
+
+    :param alb_uri: the spotify uri of the album
+    :param sp: the Spotify API client
+    param art_uri: the artist's uri
+    :type alb_uri: str
+    :type sp: spotipy.Spotify
+    :type art_uri: str
+    :return: a list of dictionaries each representing a track released by the artist in the album
+    """
+    results_dict = sp.album_tracks(album_id=alb_uri)  # album_id can be an ID, URI or URL
+
+    # get the album tracks
+    tracks = results_dict["items"]
+
+    # data is a list of dictionaries, each representing a song.
+    data = []
+    for n, track in enumerate(tracks):
+        if [ar_uri for ar_uri in tracks[n]["artists"]["uri"]].__contains__(art_uri):
+            data.insert(n, {"uri": tracks[n]["uri"],
+                            "name": tracks[n]["name"],
+                            "artists": [art["name"] for art in tracks[n]["artists"]]
+                            })
+
+    return data
