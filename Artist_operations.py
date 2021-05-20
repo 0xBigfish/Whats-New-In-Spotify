@@ -153,7 +153,7 @@ def get_all_songs_from_album(sp, alb_uri):
     """
     results_dict = sp.album_tracks(album_id=alb_uri)  # album_id can be an ID, URI or URL
 
-    # get the playlists tracks
+    # get the album tracks
     tracks = results_dict["items"]
 
     # data is a list of dictionaries, each representing a song.
