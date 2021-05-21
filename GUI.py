@@ -611,7 +611,7 @@ while True:
                                   "\n"
                                   "The field must NOT be emtpy!")
                     # read the window values again to reset the button press event and by that prevent and infinite loop
-                    event_new_group, values_new_group = window_add.read()
+                    event_add, values_add = window_add.read()
 
                 # an error popup is shown if the user made no input to the 'Spotify URI' field
                 elif values_add["-AddWindowURI-"] == "":
@@ -619,7 +619,7 @@ while True:
                                   "\n"
                                   "The field must NOT be emtpy!")
                     # read the window values again to reset the button press event and by that prevent and infinite loop
-                    event_new_group, values_new_group = window_add.read()
+                    event_add, values_add = window_add.read()
 
                 # if the user entered a valid ARTIST uri, add the artist to the group
                 elif URI_operations.is_artist_uri(values_add["-AddWindowURI-"]):
@@ -656,7 +656,7 @@ while True:
                                   "Your input was:\n" +
                                   values_add["-AddWindowURI-"])
                     # read the window values again to reset the button press event and by that prevent and infinite loop
-                    event_new_group, values_new_group = window_add.read()
+                    event_add, values_add = window_add.read()
 
         # close the input window and unfreeze the main window
         window.enable()
