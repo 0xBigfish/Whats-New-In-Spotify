@@ -57,7 +57,7 @@ class Group(object):
 #                                      (ensure to choose Python for RE semantic)
 #
 #
-# (?P<name><subRegex>) defines a subgroup or submatch. When the main regex has a match, the substring described by
+# (?P<<name>><subRegex>) defines a subgroup or submatch. When the main regex has a match, the substring described by
 # subRegex can be easily extracted via its name using the RE's group-mechanic
 #   ATTENTION: For each match by its super-regex a subgroup can only extract one match. This means that if a group COULD
 # match multiple times, only the last match will be extractable, the previously matched will NOT be extractable
@@ -216,12 +216,12 @@ def remove_group_from_file(group):
             break
 
 
-def safe_uri_content_to_hard_drive(sp, uri):
+def save_uri_content_to_hard_drive(sp, uri):
     """
-    Saves the playlist's content to a file
+    Saves the uri's content to a file. Supports only artist and playlist uris.
 
     :param sp: the Spotify API client
-    :param uri: the spotify uri of the playlist
+    :param uri: a spotify uri of a playlist or artist
     :type sp: spotipy.Spotify
     :type uri: str
     """
@@ -230,7 +230,7 @@ def safe_uri_content_to_hard_drive(sp, uri):
     today = str(date.today())  # current format: yyyy-mm-dd
     today = today.replace("-", ".")
 
-    # rename a uri "spotify:playlist:37 ..." to "spotify_playlist_37 ..."
+    # rename a uri like "spotify:playlist:37 ..." to "spotify_playlist_37 ..."
     uri_directory_name = uri.replace(":", "_")
     file_name = uri_directory_name + "_content_raw(" + today + ").json"
 
@@ -246,12 +246,31 @@ def safe_uri_content_to_hard_drive(sp, uri):
     if not os.path.isdir(uri_directory_path):
         os.mkdir(uri_directory_path)
 
-    # get the content of the playlist and save it into a file called <uri>_content_raw(<currentDate>).json
+    # get the content of the uri and save it into a file called <uri>_content_raw(<currentDate>).json
     file_path = os.path.join(uri_directory_path, file_name)
-    with open(file_path, "w") as file:
-        content = sp.playlist_items(playlist_id=URI_operations.get_playlist_id_from_uri(uri))
-        json.dump(content, file)
-        file.close()
+
+    # for playlists save the entire playlist content to the hard drive
+    if URI_operations.is_playlist_uri(uri):
+        with open(file_path, "w") as file:
+            content = sp.playlist_items(playlist_id=URI_operations.get_playlist_id_from_uri(uri))
+            json.dump(content, file)
+            file.close()
+
+    # for artists save every album featuring the artist to the hard drive
+    # artists release songs in albums or as singles or they are featured on them. Their songs can also be part of a
+    # compilation.
+    # All of these are handled as 'album' by spotify (see album_type).
+    # So if an artist appears on a new album, they most likely released a new song OR one of their songs got added to
+    # a compilations. The latter shouldn't happen that often tho.
+    elif URI_operations.is_artist_uri(uri):
+        with open(file_path, "w") as file:
+            content = sp.artist_albums(artist_id=URI_operations.get_artist_id_from_uri(uri))
+            json.dump(content, file)
+            file.close()
+
+    # make sure to throw an error to indicate something went wrong
+    else:
+        raise ValueError("Uri is not a playlist or artist uri")
 
 
 def read_playlists_and_artists_uris_from_file():
@@ -415,7 +434,10 @@ def find_latest_content_file(uri, since_date=None):
     #           ...
 
     # remove ":"s from uri and replace them with "_" as ":" must not be part of filename on some OS
-    uri = uri.replace(":", "_")
+    if uri is None or uri == "":
+        return None
+    else:
+        uri = uri.replace(":", "_")
 
     # get main directory (all .py files are in the main directory)
     main_dir_path = os.path.dirname(__file__)  # returns the directory of this file
@@ -480,7 +502,7 @@ def find_latest_content_file(uri, since_date=None):
         return None
 
 
-def get_date_from_con_file(content_file) -> date:
+def get_date_from_cont_file(content_file) -> date:
     """
     Extracts the date from the content file name and returns it as a datetime.date object
 
@@ -494,7 +516,7 @@ def get_date_from_con_file(content_file) -> date:
     return datetime.strptime(date_wrong_format.replace(".", "-"), "%Y-%m-%d")
 
 
-def get_date_from_latest_con_file(uri) -> date:
+def get_date_from_latest_cont_file(uri) -> date:
     """
     Finds the latest content file for the URI, extract the date and returns it as a datetime.date object
 

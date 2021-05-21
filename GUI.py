@@ -10,7 +10,8 @@ from spotipy.oauth2 import SpotifyOAuth
 import IO_operations
 import Playlist_operations
 import URI_operations
-from IO_operations import get_date_from_latest_con_file
+from Artist_operations import get_new_albums, get_artists_songs_from_album
+from IO_operations import get_date_from_latest_cont_file, find_latest_content_file
 from Playlist_operations import get_new_songs_in_playlist
 
 
@@ -270,17 +271,69 @@ while True:
         event_run, values_run = window_run.read()
         while True:
             if event_run == "-RunButtonRunWindow-":
-                songs_to_add = []
+                new_songs_lists = []
 
-                # show an individual window with new songs for each playlist
-                for p_tuple in groups[current_group_id].get_playlist_tuples():
+                # get new songs from each playlist and artist and save them as lists in new_songs_lists
+                for n, info_tuple in enumerate(groups[current_group_id].get_playlist_tuples() +
+                                               groups[current_group_id].get_artist_tuples()):
+                    new_songs = []
+                    # tuples of format: (<name>, <uri>)
+                    if URI_operations.is_playlist_uri(info_tuple[1]):
+                        new_songs = get_new_songs_in_playlist(sp,
+                                                              p_uri=info_tuple[1],
+                                                              since_date=values_run["-RunWindowDateInput-"],
+                                                              as_dict=True)
+
+                    elif URI_operations.is_artist_uri(info_tuple[1]):
+                        new_albums = get_new_albums(sp,
+                                                    a_uri=info_tuple[1],
+                                                    since_date=values_run["-RunWindowDateInput-"],
+                                                    as_dict=True)
+                        for n_album in new_albums:
+                            new_songs += get_artists_songs_from_album(sp,
+                                                                      alb_uri=n_album["uri"],
+                                                                      art_uri=info_tuple[1])
+
+                    # if the tuple somehow neither contains a p_uri nor a_uri, throw an error
+                    else:
+                        raise ValueError("The tuple " + repr(info_tuple) + " does not represent a playlist or "
+                                                                           "an artist!")
+
+                    # check if the user wants to create new content files
+                    if values_run["-RunWindowSaveCheck-"]:
+                        IO_operations.save_uri_content_to_hard_drive(sp, info_tuple[1])
+
+                    # add all new songs to new_songs_lists as a list
+                    new_songs_lists.append(new_songs)
+
+                # Check the user's choices in the "Run" window
+                # if the "clear playlist" checkbox is ticked, clear the entire playlist (before adding the new songs)
+                if values_run["-RunWindowClearCheck-"]:
+                    Playlist_operations.remove_all_songs_from_playlist(sp,
+                                                                       groups[current_group_id].get_target_playlist())
+
+                # if the "add songs to playlist" checkbox is ticked, save new songs in songs_to_add
+                if values_run["-RunWindowAddCheck-"]:
+                    # add all new songs at once => only a single request is sent to Spotify instead of one per playlist
+                    # also remove duplicate songs because who needs to have the same song multiple times in a playlist
+                    all_new_songs = []
+                    for song_list in new_songs_lists:
+                        for song_dic in song_list:
+                            all_new_songs.append(song_dic["uri"])
+                    no_duplicates = [s for n, s in enumerate(all_new_songs) if s not in all_new_songs[:n]]
+                    Playlist_operations.add_songs_to_playlist(
+                                                            sp,
+                                                            playlist_uri=groups[current_group_id].get_target_playlist(),
+                                                            song_uris=no_duplicates)
+
+                # Give feedback to the user
+                # show an individual window with new songs for each playlist and artist
+                for n, info_tuple in enumerate(groups[current_group_id].get_playlist_tuples() +
+                                               groups[current_group_id].get_artist_tuples()):
 
                     # list new songs in this layout and later add it to a column to assign a fixed size to it
                     presentation_window_songs = []
-                    for song_data in get_new_songs_in_playlist(sp,
-                                                               p_uri=p_tuple[1],
-                                                               since_date=values_run["-RunWindowDateInput-"],
-                                                               as_dict=True):
+                    for song_data in new_songs_lists[n]:
                         # song_data["artists"] is a list of strings
                         # ", ".join(<list of str>) concat the list of strings into a single string separated by commas
                         # ", ".join(["ab", "c", "d"]) = 'ab, c, d'
@@ -290,33 +343,31 @@ while True:
 
                     # if there are no new songs, show "no new songs" in the presentation window
                     if not presentation_window_songs_layout:
-                        date_str = get_date_from_latest_con_file(p_tuple[1]).strftime("%A %Y-%m-%d")
+                        if find_latest_content_file(info_tuple[1]) is not None:
+                            date_str = get_date_from_latest_cont_file(info_tuple[1]).strftime("%A %Y-%m-%d")
 
-                        presentation_window_songs_layout = [
-                            [sg.Text("There are no new songs since " + values_run["-RunWindowDateInput-"])],
-                            [sg.Text("")],
-                            [sg.Text("The last saved changes (excluding today) are from:  " + date_str)]
-                        ]
+                            presentation_window_songs_layout = [
+                                [sg.Text("There are no new songs since " + values_run["-RunWindowDateInput-"])],
+                                [sg.Text("")],
+                                [sg.Text("The last saved changes (excluding today) are from:  " + date_str)]
+                            ]
 
-                    # if the "save playlist content" checkbox is ticked, save the playlist content to the hard drive
-                    # and tell the user that the content has been saved in the presentation window
+                        else:
+                            presentation_window_songs_layout = [
+                                [sg.Text("There are is no data for this playlist / artist yet!")]
+                            ]
+
+                    # if the "save playlist content" checkbox is ticked, tell the user that the content has been saved
+                    # in the presentation window
                     if values_run["-RunWindowSaveCheck-"]:
-                        IO_operations.safe_uri_content_to_hard_drive(sp, p_tuple[1])
-
                         presentation_window_songs_layout.insert(0, [sg.Text("Playlist content saved to hard drive!")])
                         presentation_window_songs_layout.insert(1, [sg.Text("")])  # blank line
 
-                    # if the "add songs to playlist" checkbox is ticked, save new songs in songs_to_add
-                    # duplicates are removed later, once all new songs from all playlists have been collected
-                    if values_run["-RunWindowAddCheck-"]:
-                        songs_to_add += \
-                            Playlist_operations.get_new_songs_in_playlist(sp,
-                                                                          p_tuple[1],
-                                                                          values_run["-RunWindowDateInput-"])
-
                     # the layout for the windows that show new songs that have been added / released
                     layout_presentation_window = [
-                        [sg.Text("New Songs in " + p_tuple[0], font="default 16 bold")],
+                        [sg.Text("New Songs " +
+                                 ("in " if URI_operations.is_playlist_uri(info_tuple[1]) else "from ") + info_tuple[0],
+                                 font="default 16 bold")],
                         [sg.Column(
                             layout=presentation_window_songs_layout, size=(1000, 500), scrollable=True)],
                         [sg.Button("Next")]
@@ -338,17 +389,6 @@ while True:
                     if quit_flag:
                         break
 
-                # if the "clear playlist" checkbox is ticked, clear the entire playlist before adding the new songs
-                if values_run["-RunWindowClearCheck-"]:
-                    Playlist_operations.remove_all_songs_from_playlist(sp,
-                                                                       groups[current_group_id].get_target_playlist())
-
-                # add all new songs at once => only a single request is sent to Spotify instead of one per playlist
-                # also remove duplicate songs because who needs to have the same song multiple times in a playlist
-                no_duplicates = [s for n, s in enumerate(songs_to_add) if s not in songs_to_add[:n]]
-                Playlist_operations.add_songs_to_playlist(sp,
-                                                          playlist_uri=groups[current_group_id].get_target_playlist(),
-                                                          song_uris=no_duplicates)
                 break
 
             if event_run in (sg.WINDOW_CLOSED, "Go Back"):
