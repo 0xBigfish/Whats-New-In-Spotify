@@ -329,7 +329,7 @@ def add_songs_to_playlist(sp, playlist_uri, song_uris):
     # an error occurs when trying to add an emtpy list of songs to the playlist
     # Spotify only allows the addition of max. 100 songs per request
     playlist_id = get_playlist_id_from_uri(playlist_uri)
-    if 1 < len(song_uris) <= 100:
+    if 1 <= len(song_uris) <= 100:
         sp.playlist_add_items(playlist_id, song_uris)
 
     elif len(song_uris) > 100:
