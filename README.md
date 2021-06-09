@@ -1,8 +1,31 @@
 # WhatsNewInSpotify
 
-A little script that adds new songs in playlists and new releases from artist to a designated playlist.
+**A little program that adds new songs in observed playlists and new releases from observed artists to a designated playlist.**
+
+Simple add playlists and artists to a group and run the program to download their content. The next time you run the program it will compare the saved content to the current content and add new songs to your designated playlist.
+
+**Supports multiple groups!**
 
 ## Installation
+1. You need Python to run this program (I'm using Python 3.8, I haven't tested older versions yet).
+
+2. Install Spotipy (all 2.xx.xx versions should work; I'm using 2.16.1) via 
+```bash
+pip install spotipy
+```
+
+3. Download this repository by clicking ``Code`` at the beginning of this website and then click ``Download Zip``. Extract the zip to wherever you want.
+
+
+## Running the program
+Navigate to werever you extracted the zip file to. In this directory open a terminal or shell (on windows you can use ``Shift + Right-Click``-> ``Open in Windows Terminal`` or ``PowerShell window here``).
+
+To run the program enter 
+```bash
+python GUI.py
+```
+into the terminal or shell
+
 
 
 ## How to get a Spotify URI or Spotify Link
