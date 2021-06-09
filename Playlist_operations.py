@@ -19,51 +19,51 @@ def print_playlist_changes(sp, p_uri):
     """
     # results is a json file
     # object{7}:
-    #   href: https://api.spoitfy....
-    #   items [number_of_items]:
+    #   "href": https://api.spoitfy....
+    #   "items" [number_of_items]:
     #       0 {6}:
-    #           added_at: 2020-12-27T23:01:00Z
-    #           added_by {5}:
-    #           is_local : false
-    #           primary_color : null
-    #           track{19}:
-    #               album{13}:
-    #               artists [number_of_artists] :
+    #           "added_at": "2020-12-27T23:01:00Z"
+    #           "added_by" {5}:
+    #           "is_local" : false
+    #           "primary_color" : null
+    #           "track"{19}:
+    #               "album"{13}:
+    #               "artists" [number_of_artists] :
     #                   0 {6}:
-    #                       external_urls {1}:
-    #                       href:
-    #                       id:
-    #                       name:
-    #                       type:
-    #                       uri:
+    #                       "external_urls" {1}:
+    #                       "href":
+    #                       "id":
+    #                       "name":
+    #                       "type": "artist"
+    #                       "uri":
     #                   1 {6}:
     #                       ...
-    #               available_markets [n_of_avail_markets] :
-    #               disc_number : 1
-    #               duration_ms : 140026
-    #               episode : false
-    #               explicit : true
-    #               external_ids {1}:
-    #               external_urls {1}:
-    #               href: https://api.spotify..
-    #               id : j01u0u401
-    #               is_local : false
-    #               name : Lost (feat. xyz)
-    #               popularity : 80
-    #               preview_url : null
-    #               track : true
-    #               track_number : 1
-    #               type : track
-    #               uri : spotify:track:<id>
-    #           video_thumbnail {1} :
+    #               "available_markets" [n_of_avail_markets] :
+    #               "disc_number" : 1
+    #               "duration_ms" : 140026
+    #               "episode" : false
+    #               "explicit" : true
+    #               "external_ids" {1}:
+    #               "external_urls" {1}:
+    #               "href": "https://api.spotify"..
+    #               "id" : "j01u0u401"
+    #               "is_local" : false
+    #               "name" : "Lost (feat. xyz)"
+    #               "popularity" : 80
+    #               "preview_url" : null
+    #               "track" : true
+    #               "track_number" : 1
+    #               "type" : "track"
+    #               "uri" : "spotify:track:<id>"
+    #           "video_thumbnail" {1} :
     #       1 {6}:
     #           .....
     #
-    #   limit : 100
-    #   next : null
-    #   offset: 0
-    #   previous: null
-    #   total : 50
+    #   "limit" : 100
+    #   "next" : null
+    #   "offset": 0
+    #   "previous": null
+    #   "total" : 50
 
     # playlist_items yields a dictionary or JSON file
     results_dict = sp.playlist_items(playlist_id=get_playlist_id_from_uri(p_uri))
@@ -159,51 +159,51 @@ def get_all_songs_from_playlist(sp, p_uri):
     """
     # results is a json file
     # object{7}:
-    #   href: https://api.spoitfy....
-    #   items [number_of_items]:
+    #   "href": https://api.spoitfy....
+    #   "items" [number_of_items]:
     #       0 {6}:
-    #           added_at: 2020-12-27T23:01:00Z
-    #           added_by {5}:
-    #           is_local : false
-    #           primary_color : null
-    #           track{19}:
-    #               album{13}:
-    #               artists [number_of_artists] :
+    #           "added_at": "2020-12-27T23:01:00Z"
+    #           "added_by" {5}:
+    #           "is_local" : false
+    #           "primary_color" : null
+    #           "track"{19}:
+    #               "album"{13}:
+    #               "artists" [number_of_artists] :
     #                   0 {6}:
-    #                       external_urls {1}:
-    #                       href:
-    #                       id:
-    #                       name:
-    #                       type:
-    #                       uri:
+    #                       "external_urls" {1}:
+    #                       "href":
+    #                       "id":
+    #                       "name":
+    #                       "type": "artist"
+    #                       "uri":
     #                   1 {6}:
     #                       ...
-    #               available_markets [n_of_avail_markets] :
-    #               disc_number : 1
-    #               duration_ms : 140026
-    #               episode : false
-    #               explicit : true
-    #               external_ids {1}:
-    #               external_urls {1}:
-    #               href: https://api.spotify..
-    #               id : j01u0u401
-    #               is_local : false
-    #               name : Lost (feat. xyz)
-    #               popularity : 80
-    #               preview_url : null
-    #               track : true
-    #               track_number : 1
-    #               type : track
-    #               uri : spotify:track:<id>
-    #           video_thumbnail {1} :
+    #               "available_markets" [n_of_avail_markets] :
+    #               "disc_number" : 1
+    #               "duration_ms" : 140026
+    #               "episode" : false
+    #               "explicit" : true
+    #               "external_ids" {1}:
+    #               "external_urls" {1}:
+    #               "href": "https://api.spotify"..
+    #               "id" : "j01u0u401"
+    #               "is_local" : false
+    #               "name" : "Lost (feat. xyz)"
+    #               "popularity" : 80
+    #               "preview_url" : null
+    #               "track" : true
+    #               "track_number" : 1
+    #               "type" : "track"
+    #               "uri" : "spotify:track:<id>"
+    #           "video_thumbnail" {1} :
     #       1 {6}:
     #           .....
     #
-    #   limit : 100
-    #   next : null
-    #   offset: 0
-    #   previous: null
-    #   total : 50
+    #   "limit" : 100
+    #   "next" : null
+    #   "offset": 0
+    #   "previous": null
+    #   "total" : 50
     # playlist_items yields a dictionary or JSON file
     results_dict = sp.playlist_items(playlist_id=get_playlist_id_from_uri(p_uri))
 
