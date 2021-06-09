@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, bugfix/ubuntu_test_failing ]
   pull_request:
     branches: [ master, bugfix/ubuntu_test_failing ]
 
