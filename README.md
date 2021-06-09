@@ -14,7 +14,26 @@ Simple add playlists and artists to a group and run the program to download thei
 pip install spotipy
 ```
 
-3. Download this repository by clicking ``Code`` at the beginning of this website and then click ``Download Zip``. Extract the zip to wherever you want.
+3. Install PySimpleGui (version 4.xx.xx) via
+```bash
+pip install pysimplegui
+ ```
+4. *This is kind of an inconvenient step. I hope to find a workaround soon. Spotipy enforces the user to set two variables in the ``system environment variables`` in order to be useable.*
+
+    4.1 First you need to log in to https://developer.spotify.com/dashboard/ with your Spotify account and create an app there. 
+
+    4.2 Find ``Client-ID`` and ``Client-Secret`` just below your app's name
+    
+    4.3 Add the ``Client-ID`` and ``Client Secret`` to your system's ``environment variables`` like this: <br>
+    (If you are using windows see [here](https://windowsloop.com/add-environment-variable-in-windows-10/) and add the variables to the ``System variables``)
+    | Variable | Value |
+    |---------:|:-----:|
+    | ``SPOTIPY_CLIENT_ID`` | <your_client_id> |
+    | ``SPOTIPY_CLIENT_SECRET`` | <your_client_secret> |
+    
+    **Important:** It's ``SPOTIPY`` with a ``P``, no with a ``F``.
+
+5. Download this repository by clicking ``Code`` at the beginning of this website and then click ``Download Zip``. Extract the zip to wherever you want.
 
 
 ## Running the program
@@ -108,6 +127,9 @@ Coming soon (maybe, possibly, I don't know)
 
 
 ## Credits
-This script utilizes the Spotipy library (Copyright (c) 2014 Paul Lamere).
-
+This script utilizes the Spotipy library (Copyright (c) 2014 Paul Lamere). <br>
 You can find it here: https://github.com/plamere/spotipy
+
+
+This script utilizes the PySimpleGui GUI. <br>
+You can find it here: https://github.com/PySimpleGUI/PySimpleGUI
