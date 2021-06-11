@@ -198,7 +198,7 @@ def get_artists_songs_from_album(sp, alb_uri, art_uri):
     # data is a list of dictionaries, each representing a song.
     data = []
     for n, track in enumerate(tracks):
-        if [ar_uri for ar_uri in tracks[n]["artists"]["uri"]].__contains__(art_uri):
+        if [artist["uri"] for artist in tracks[n]["artists"]].__contains__(art_uri):
             data.insert(n, {"uri": tracks[n]["uri"],
                             "name": tracks[n]["name"],
                             "artists": [art["name"] for art in tracks[n]["artists"]]
