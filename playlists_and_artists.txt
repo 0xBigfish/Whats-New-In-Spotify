@@ -13,26 +13,30 @@
 
 
 GROUP:Release Radar={
-
-## ADD_TO:{spotify:playlist:7IXuBMZ4wimBgD79WmZY9j}
+## ADD_TO:{spotify:playlist:555TTgcyRb2gQGiwRfIgoU}
 
 ## PLAYLISTS={
 
-	ModusMio=spotify:playlist:37i9dQZF1DX36edUJpD76c
+	RapCavier=spotify:playlist:37i9dQZF1DX0XUsuxWHRQd
 
-	RapCaviar=spotify:playlist:37i9dQZF1DX0XUsuxWHRQd
+	Top Singles Global=spotify:playlist:37i9dQZEVXbNG2KDcFcKOF
 
-	}
+	Jenny's HipHop Playlist=spotify:playlist:37i9dQZEVXbNG2KDcFcKOF
 
-
+	Viral 50 Global=spotify:playlist:37i9dQZEVXbLiRSasKsNU9
+}
 
 ## ARTISTS={
 
-	Generic top artist=spotify:artist:3TVXtAsR1Inumwj472S9r4
+	DaBaby (lezz go)=spotify:artist:4r63FhuTkUYltbVAg5TQnk
 
-	}
+	Dua Lipa=spotify:artist:6M2wZ9GZgrQXHCFfjv46we
+
+	Ariana Grande=spotify:artist:66CXWjxzNUsdJxJ2JdwvnR
+
+	Generic Top Artist (Drake)=spotify:artist:3TVXtAsR1Inumwj472S9r4
 }
-
+}
 
 
 
@@ -42,14 +46,12 @@ GROUP:Second Radar={
 
 ## PLAYLISTS={
 
-	random name=spotify:playlist:37i9dQZF1DX0XUsuxWHRQd
-
-
 	}
 
 
 
 
 ## ARTISTS={
+
 	}
 }
